@@ -39,25 +39,20 @@ if prompt := st.chat_input("What would you like to know?"):
             response = anthropic.messages.create(
                 model="claude-3-opus-20240229",
                 max_tokens=1024,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{
+                    "role": "system",
+                    "content": "You are a helpful AI assistant. Provide direct, concise answers. If you don't have access to real-time data, simply state that clearly and briefly."
+                }, {
+                    "role": "user",
+                    "content": prompt
+                }]
             )
-            assistant_response = response.content
+            # Extract just the text content from Claude's response
+            assistant_response = str(response.content[0].text) if hasattr(response.content[0], 'text') else response.content
             
         else:  # Grok
-            # Grok API endpoint
-            url = "https://api.x.ai/v1/chat/completions"  # Updated Grok endpoint
-            headers = {
-                "Authorization": f"Bearer {st.secrets['GROK_API_KEY']}",
-                "Content-Type": "application/json"
-            }
-            data = {
-                "model": "grok-1",
-                "messages": [{"role": "user", "content": prompt}]
-            }
-            
-            response = requests.post(url, headers=headers, json=data)
-            response_data = response.json()
-            assistant_response = response_data['choices'][0]['message']['content']
+            st.warning("Grok API access requires credits. Currently unavailable.")
+            assistant_response = "Grok API access requires credits. Please try using Claude instead."
 
         # Display assistant response
         with st.chat_message("assistant"):
@@ -70,4 +65,4 @@ if prompt := st.chat_input("What would you like to know?"):
 # Add a clear chat button
 if st.button("Clear Chat"):
     st.session_state.messages = []
-    st.rerun()  # Updated from experimental_rerun()
+    st.rerun()
