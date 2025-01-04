@@ -39,16 +39,14 @@ if prompt := st.chat_input("What would you like to know?"):
             response = anthropic.messages.create(
                 model="claude-3-opus-20240229",
                 max_tokens=1024,
+                system="You are a helpful AI assistant. Provide direct, concise answers. If you don't have access to real-time data, simply state that clearly and briefly.",
                 messages=[{
-                    "role": "system",
-                    "content": "You are a helpful AI assistant. Provide direct, concise answers. If you don't have access to real-time data, simply state that clearly and briefly."
-                }, {
                     "role": "user",
                     "content": prompt
                 }]
             )
-            # Extract just the text content from Claude's response
-            assistant_response = str(response.content[0].text) if hasattr(response.content[0], 'text') else response.content
+            # Extract just the text content
+            assistant_response = response.content
             
         else:  # Grok
             st.warning("Grok API access requires credits. Currently unavailable.")
