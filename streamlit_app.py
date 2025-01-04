@@ -14,7 +14,7 @@ st.set_page_config(
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-def get_grok_response(prompt, system_message="You are a helpful assistant with access to real-time information and image generation capabilities."):
+def get_grok_response(prompt, system_message="You are a helpful assistant with access to real-time information."):
     url = "https://api.x.ai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROK_API_KEY}",
@@ -33,12 +33,14 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with a
             }
         ],
         "stream": False,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "max_tokens": 1000  # Added max_tokens
     }
     
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
+        st.write("Debug - Grok Raw Response:", response.json())  # Debug line
         return response.json()['choices'][0]['message']['content']
     except requests.exceptions.RequestException as e:
         if hasattr(response, 'text'):
@@ -46,13 +48,20 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with a
             st.error(f"Error details: {error_details}")
         raise Exception(f"Grok API error: {str(e)}\nResponse: {response.text if hasattr(response, 'text') else 'No response'}")
 
-# Title and Feature Selection
-st.title("Enhanced AI Assistant")
-feature_choice = st.selectbox("Choose Feature", [
-    "General Chat", 
-    "Current News Analysis", 
-    "Image Generation & Analysis",
-    "Code Development"
+# When handling news requests:
+if feature_choice == "Current News Analysis":
+    grok_system_message = """You are a news assistant with access to real-time information. 
+    When asked for news headlines, provide exactly what is requested in a clear, numbered format.
+    Include the date and basic details for each headline."""
+    
+    if "headlines" in prompt.lower():
+        grok_prompt = """Please provide exactly 5 of the most important current news headlines.
+        Format them as:
+        1. [Headline] - [Brief one-line summary] (Date)
+        2. [Headline] - [Brief one-line summary] (Date)
+        etc."""
+    else:
+        grok_prompt = f"Please provide detailed current news about: {prompt}. Include dates and key developments."
 ])
 
 # Initialize chat history
