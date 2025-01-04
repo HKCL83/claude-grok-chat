@@ -34,7 +34,7 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with a
         ],
         "stream": False,
         "temperature": 0.7,
-        "max_tokens": 1000  # Added max_tokens
+        "max_tokens": 1000
     }
     
     try:
@@ -48,20 +48,13 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with a
             st.error(f"Error details: {error_details}")
         raise Exception(f"Grok API error: {str(e)}\nResponse: {response.text if hasattr(response, 'text') else 'No response'}")
 
-# When handling news requests:
-if feature_choice == "Current News Analysis":
-    grok_system_message = """You are a news assistant with access to real-time information. 
-    When asked for news headlines, provide exactly what is requested in a clear, numbered format.
-    Include the date and basic details for each headline."""
-    
-    if "headlines" in prompt.lower():
-        grok_prompt = """Please provide exactly 5 of the most important current news headlines.
-        Format them as:
-        1. [Headline] - [Brief one-line summary] (Date)
-        2. [Headline] - [Brief one-line summary] (Date)
-        etc."""
-    else:
-        grok_prompt = f"Please provide detailed current news about: {prompt}. Include dates and key developments."
+# Title and Feature Selection
+st.title("Enhanced AI Assistant")
+feature_choice = st.selectbox("Choose Feature", [
+    "General Chat", 
+    "Current News Analysis", 
+    "Image Generation & Analysis",
+    "Code Development"
 ])
 
 # Initialize chat history
@@ -83,8 +76,18 @@ if prompt := st.chat_input("What would you like to know?"):
         if feature_choice in ["Current News Analysis", "Image Generation & Analysis"]:
             # Prepare Grok prompt based on feature
             if feature_choice == "Current News Analysis":
-                grok_system_message = "You are a news assistant with access to real-time information. Provide current, factual updates."
-                grok_prompt = f"Please provide the latest news about: {prompt}. Include recent developments and factual information."
+                grok_system_message = """You are a news assistant with access to real-time information. 
+                When asked for news headlines, provide exactly what is requested in a clear, numbered format.
+                Include the date and basic details for each headline."""
+                
+                if "headlines" in prompt.lower():
+                    grok_prompt = """Please provide exactly 5 of the most important current news headlines.
+                    Format them as:
+                    1. [Headline] - [Brief one-line summary] (Date)
+                    2. [Headline] - [Brief one-line summary] (Date)
+                    etc."""
+                else:
+                    grok_prompt = f"Please provide detailed current news about: {prompt}. Include dates and key developments."
             else:  # Image Generation & Analysis
                 grok_system_message = "You are an image generation assistant. Create and describe images based on prompts."
                 grok_prompt = f"Please generate an image based on this description: {prompt}"
@@ -92,6 +95,7 @@ if prompt := st.chat_input("What would you like to know?"):
             # Get Grok's response
             try:
                 grok_response = get_grok_response(grok_prompt, grok_system_message)
+                st.write("Debug - Grok Response:", grok_response)  # Debug line
             except Exception as e:
                 st.error(f"Grok API error: {str(e)}")
                 grok_response = "Error fetching data from Grok"
