@@ -3,8 +3,62 @@ from anthropic import Anthropic
 import requests
 import json
 from datetime import datetime
+from dotenv import load_dotenv
 
-# Page config and API keys initialization remain the same
+# Page config
+st.set_page_config(
+    page_title="AI Assistant",
+    page_icon="🤖",
+    layout="wide"
+)
+
+# Initialize API keys from secrets
+anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+GROK_API_KEY = st.secrets["GROK_API_KEY"]
+
+def get_grok_response(prompt, system_message="You are a real-time news assistant."):
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    messages = [
+        {
+            "role": "system",
+            "content": f"""You are a real-time news assistant. When reporting news:
+            1. Only report verifiable current news from {today}
+            2. If you cannot verify a story is from today, say so explicitly
+            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
+            4. If you're not sure about the date, acknowledge the uncertainty
+            5. Prioritize factual reporting over completeness
+            
+            Format: 
+            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
+        }
+    ]
+    
+    if "conversation" in st.session_state:
+        messages.extend(st.session_state.conversation[-5:])
+    
+    messages.append({
+        "role": "user",
+        "content": prompt
+    })
+    
+    data = {
+        "model": "grok-beta",
+        "messages": messages,
+        "stream": False,
+        "temperature": 0.2,
+        "max_tokens": 1000
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()['choices'][0]['message']['content']
 
 def get_claude_response(prompt, system_message="You are a versatile AI assistant."):
     messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]] if "conversation" in st.session_state else []
@@ -19,16 +73,11 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
     
     return response.content[0].text if isinstance(response.content, list) else response.content
 
-def get_grok_response(prompt, system_message="You are a real-time news assistant."):
-    # ... (previous implementation for news)
-    # Here you might also add logic for image rendering if available
-    pass
-
 def get_image(prompt):
     # This function is a placeholder for when you have an actual image generation API from Grok
     return "Image would be generated here if API was available."
 
-# Main App Logic
+# Title
 st.title("AI Assistant")
 
 # Initialize conversation history
@@ -40,6 +89,7 @@ for message in st.session_state.conversation:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# Chat input
 if prompt := st.chat_input("What would you like to know?"):
     st.chat_message("user").markdown(prompt)
     st.session_state.conversation.append({"role": "user", "content": prompt})
@@ -62,4 +112,7 @@ if prompt := st.chat_input("What would you like to know?"):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-# Clear Chat functionality remains the same
+# Add a clear chat button
+if st.button("Clear Chat"):
+    st.session_state.conversation = []
+    st.rerun()
