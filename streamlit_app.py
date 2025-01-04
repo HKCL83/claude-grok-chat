@@ -38,20 +38,21 @@ if prompt := st.chat_input("What would you like to know?"):
             # Get Claude's response
             response = anthropic.messages.create(
                 model="claude-3-opus-20240229",
-                messages=st.session_state.messages
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}]
             )
             assistant_response = response.content
             
         else:  # Grok
             # Grok API endpoint
-            url = "https://api.grok.ai/v1/chat/completions"  # Verify this endpoint
+            url = "https://api.x.ai/v1/chat/completions"  # Updated Grok endpoint
             headers = {
                 "Authorization": f"Bearer {st.secrets['GROK_API_KEY']}",
                 "Content-Type": "application/json"
             }
             data = {
                 "model": "grok-1",
-                "messages": st.session_state.messages
+                "messages": [{"role": "user", "content": prompt}]
             }
             
             response = requests.post(url, headers=headers, json=data)
