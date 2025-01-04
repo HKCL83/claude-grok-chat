@@ -14,15 +14,25 @@ st.set_page_config(
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-def get_grok_response(prompt):
+def get_grok_response(prompt, system_message="You are a helpful assistant with access to real-time information and image generation capabilities."):
     url = "https://api.x.ai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROK_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
-        "model": "grok-0",
-        "messages": [{"role": "user", "content": prompt}],
+        "model": "grok-beta",
+        "messages": [
+            {
+                "role": "system",
+                "content": system_message
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "stream": False,
         "temperature": 0.7
     }
     
@@ -33,7 +43,7 @@ def get_grok_response(prompt):
     except requests.exceptions.RequestException as e:
         if hasattr(response, 'text'):
             error_details = response.json()
-            st.error(f"Available models: {error_details.get('available_models', 'No model info available')}")
+            st.error(f"Error details: {error_details}")
         raise Exception(f"Grok API error: {str(e)}\nResponse: {response.text if hasattr(response, 'text') else 'No response'}")
 
 # Title and Feature Selection
@@ -64,13 +74,15 @@ if prompt := st.chat_input("What would you like to know?"):
         if feature_choice in ["Current News Analysis", "Image Generation & Analysis"]:
             # Prepare Grok prompt based on feature
             if feature_choice == "Current News Analysis":
+                grok_system_message = "You are a news assistant with access to real-time information. Provide current, factual updates."
                 grok_prompt = f"Please provide the latest news about: {prompt}. Include recent developments and factual information."
             else:  # Image Generation & Analysis
+                grok_system_message = "You are an image generation assistant. Create and describe images based on prompts."
                 grok_prompt = f"Please generate an image based on this description: {prompt}"
             
             # Get Grok's response
             try:
-                grok_response = get_grok_response(grok_prompt)
+                grok_response = get_grok_response(grok_prompt, grok_system_message)
             except Exception as e:
                 st.error(f"Grok API error: {str(e)}")
                 grok_response = "Error fetching data from Grok"
