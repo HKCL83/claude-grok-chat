@@ -21,15 +21,20 @@ def get_grok_response(prompt):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "grok-1",
-        "messages": [{"role": "user", "content": prompt}]
+        "model": "grok-0",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7
     }
     
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
         return response.json()['choices'][0]['message']['content']
-    else:
-        raise Exception(f"Grok API error: {response.text}")
+    except requests.exceptions.RequestException as e:
+        if hasattr(response, 'text'):
+            error_details = response.json()
+            st.error(f"Available models: {error_details.get('available_models', 'No model info available')}")
+        raise Exception(f"Grok API error: {str(e)}\nResponse: {response.text if hasattr(response, 'text') else 'No response'}")
 
 # Title and Feature Selection
 st.title("Enhanced AI Assistant")
