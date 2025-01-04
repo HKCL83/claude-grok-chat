@@ -14,9 +14,14 @@ st.set_page_config(
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-# Title and Model Selection
-st.title("AI Chat Assistant")
-model_choice = st.selectbox("Choose AI Model", ["Claude", "Grok"])
+# Title and Feature Selection
+st.title("Enhanced AI Assistant")
+feature_choice = st.selectbox("Choose Feature", [
+    "General Chat", 
+    "Current News Analysis", 
+    "Image Generation & Analysis",
+    "Code Development"
+])
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -34,23 +39,43 @@ if prompt := st.chat_input("What would you like to know?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     try:
-        if model_choice == "Claude":
-            # Get Claude's response
-            response = anthropic.messages.create(
-                model="claude-3-opus-20240229",
-                max_tokens=1024,
-                system="You are a helpful AI assistant. Provide direct, concise answers. If you don't have access to real-time data, simply state that clearly and briefly.",
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
-            )
-            # Extract just the text content
-            assistant_response = response.content[0].text if isinstance(response.content, list) else response.content
-            
-        else:  # Grok
-            st.warning("Grok API access requires credits. Currently unavailable.")
-            assistant_response = "Grok API access requires credits. Please try using Claude instead."
+        if feature_choice in ["Current News Analysis", "Image Generation & Analysis"]:
+            # First get Grok's response (when available)
+            grok_prompt = f"Regarding: {prompt}\nProvide factual, current information or generate an image as requested."
+            """
+            # This will be implemented when Grok credits are available
+            grok_response = get_grok_response(grok_prompt)
+            """
+            # Temporary placeholder
+            grok_response = "Grok API access requires credits. Currently unavailable."
+
+            # Then have Claude enhance/interpret Grok's response
+            claude_prompt = f"""
+            Task: {feature_choice}
+            User Query: {prompt}
+            Raw Information: {grok_response}
+
+            Please provide an enhanced, well-structured response incorporating this information.
+            For news, add context and analysis.
+            For images, provide detailed descriptions and insights.
+            """
+        else:
+            # Direct Claude interaction for general chat and coding
+            claude_prompt = prompt
+
+        # Get Claude's response
+        response = anthropic.messages.create(
+            model="claude-3-opus-20240229",
+            max_tokens=1024,
+            system="You are an advanced AI assistant with expertise in analysis, coding, and communication. When given real-time data or images, analyze and explain them thoroughly. For coding, provide detailed, well-documented solutions.",
+            messages=[{
+                "role": "user",
+                "content": claude_prompt
+            }]
+        )
+        
+        # Extract just the text content
+        assistant_response = response.content[0].text if isinstance(response.content, list) else response.content
 
         # Display assistant response
         with st.chat_message("assistant"):
