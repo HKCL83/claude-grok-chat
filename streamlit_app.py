@@ -70,4 +70,4 @@ if prompt := st.chat_input("What would you like to know?"):
 # Add a clear chat button
 if st.button("Clear Chat"):
     st.session_state.messages = []
-    st.experimental_rerun()
+    st.rerun()  # Updated from experimental_rerun()
