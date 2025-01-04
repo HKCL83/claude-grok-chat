@@ -27,13 +27,15 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with r
     messages = [
         {
             "role": "system",
-            "content": f"""You are a real-time news assistant. For each headline:
-            1. Only provide news from {today}
-            2. Include the exact publication date and time
-            3. Include the direct source URL
-            4. Verify the date in the article matches today's date
-            5. If asked about specific topics, ensure the news is recent and relevant
-            Format: [DATE] [TIME] - [HEADLINE] - [SUMMARY] - Source: [URL]"""
+            "content": f"""You are a real-time news assistant. When reporting news:
+            1. Only report verifiable current news from {today}
+            2. If you cannot verify a story is from today, say so explicitly
+            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
+            4. If you're not sure about the date, acknowledge the uncertainty
+            5. Prioritize factual reporting over completeness
+            
+            Format: 
+            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
         }
     ]
     
@@ -42,7 +44,7 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with r
     
     messages.append({
         "role": "user",
-        "content": prompt + "\nPlease include source URLs and verify all dates are current."
+        "content": prompt
     })
     
     data = {
@@ -50,7 +52,7 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with r
         "messages": messages,
         "stream": False,
         "temperature": 0.2,
-        "max_tokens": 1000  # Increased for source URLs
+        "max_tokens": 1000
     }
     
     response = requests.post(url, headers=headers, json=data)
@@ -81,38 +83,24 @@ if prompt := st.chat_input("What would you like to know?"):
             today = datetime.now().strftime("%Y-%m-%d")
             
             if any(word in prompt.lower() for word in ['news', 'headlines', 'current events']):
-                news_prompt = f"""Provide ONLY verified news from {today}. 
+                news_prompt = f"""Provide ONLY verified current news from major news sources.
                 For each headline include:
-                1. Exact publication date and time
-                2. Complete headline
-                3. Brief summary
-                4. Direct source URL
-                5. Verify that the article's content is from today
+                1. News source name
+                2. Date if known (must be {today})
+                3. Complete headline
+                4. Brief factual summary
                 
                 Format each entry as:
-                [DATE] [TIME] - [HEADLINE] - [SUMMARY] - Source: [URL]
+                [SOURCE NAME] [DATE] - [HEADLINE] - [SUMMARY]
                 
-                If searching for specific topics (e.g., Trump, Biden), ensure all news is from {today} only.
-                Do not include older articles."""
+                If you cannot verify a story is from today, say so explicitly."""
             else:
-                news_prompt = prompt + "\nInclude sources and verify all dates are current."
+                news_prompt = prompt + "\nProvide source names and dates for verification."
             
             grok_response = get_grok_response(news_prompt)
             
-            verification_prompt = f"""
-            Previous response: {grok_response}
-            
-            Please verify:
-            1. All dates match today's date ({today})
-            2. All URLs are valid and accessible
-            3. Content is current and accurate
-            
-            If any information is outdated or incorrect, please provide updated information with current sources."""
-            
-            final_response = get_grok_response(verification_prompt)
-            
-            st.chat_message("assistant").markdown(final_response)
-            st.session_state.conversation.append({"role": "assistant", "content": final_response})
+            st.chat_message("assistant").markdown(grok_response)
+            st.session_state.conversation.append({"role": "assistant", "content": grok_response})
 
         else:
             messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]]
