@@ -24,18 +24,26 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with r
     
     today = datetime.now().strftime("%Y-%m-%d")
     
+    # Include conversation history in the messages
+    messages = [
+        {
+            "role": "system",
+            "content": f"You are a real-time news assistant. For each headline, include both the date and time published. Always specify if the news is from {today}."
+        }
+    ]
+    
+    # Add conversation history
+    if "conversation" in st.session_state:
+        messages.extend(st.session_state.conversation[-5:])  # Last 5 messages
+    
+    messages.append({
+        "role": "user",
+        "content": prompt
+    })
+    
     data = {
         "model": "grok-beta",
-        "messages": [
-            {
-                "role": "system",
-                "content": f"You are a real-time news assistant. For each headline, include both the date and time published. Always specify if the news is from {today}."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
+        "messages": messages,
         "stream": False,
         "temperature": 0.2,
         "max_tokens": 500
@@ -48,82 +56,66 @@ def get_grok_response(prompt, system_message="You are a helpful assistant with r
 # Title
 st.title("AI Assistant")
 
-# Initialize chat history and last news response
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "last_news" not in st.session_state:
-    st.session_state.last_news = None
+# Initialize conversation history
+if "conversation" not in st.session_state:
+    st.session_state.conversation = []
 
 # Display chat history
-for message in st.session_state.messages:
+for message in st.session_state.conversation:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # Chat input
 if prompt := st.chat_input("What would you like to know?"):
+    # Add user message to conversation
     st.chat_message("user").markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.conversation.append({"role": "user", "content": prompt})
 
     try:
-        # Check if this is a follow-up question about news
-        if any(word in prompt.lower() for word in ['these headlines', 'this news', 'when was this']):
-            if st.session_state.last_news:
-                response = anthropic.messages.create(
-                    model="claude-3-opus-20240229",
-                    max_tokens=1024,
-                    system="You are analyzing news headlines. Reference the dates and times in your response.",
-                    messages=[{
-                        "role": "user",
-                        "content": f"Previous headlines: {st.session_state.last_news}\n\nUser question: {prompt}"
-                    }]
-                )
-                assistant_response = response.content[0].text if isinstance(response.content, list) else response.content
-                with st.chat_message("assistant"):
-                    st.markdown(assistant_response)
-                st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-            else:
-                st.error("No recent headlines to reference. Try asking for news headlines first.")
-
-        # Check if this is a news request
-        elif any(word in prompt.lower() for word in ['news', 'headlines', 'current events']):
-            today = datetime.now().strftime("%Y-%m-%d")
-            news_prompt = f"""Provide ONLY today's ({today}) top news headlines. 
-            For each headline, include:
-            [DATE PUBLISHED] [TIME PUBLISHED] - [HEADLINE] - [ONE-LINE SUMMARY]
+        if any(word in prompt.lower() for word in ['news', 'headlines', 'current events']) or \
+           any(word in prompt.lower() for word in ['these', 'this', 'those']):
             
-            Provide exactly what was requested (e.g., if 5 headlines were asked for, provide exactly 5).
-            Only include news from {today}. Be explicit about the publishing date and time for each headline."""
+            today = datetime.now().strftime("%Y-%m-%d")
+            
+            # If it's a direct news request
+            if any(word in prompt.lower() for word in ['news', 'headlines', 'current events']):
+                news_prompt = f"""Provide ONLY today's ({today}) top news headlines. 
+                For each headline, include:
+                [DATE PUBLISHED] [TIME PUBLISHED] - [HEADLINE] - [ONE-LINE SUMMARY]
+                
+                Provide exactly what was requested (e.g., if 5 headlines were asked for, provide exactly 5).
+                Only include news from {today}. Be explicit about the publishing date and time for each headline."""
+            else:
+                # For follow-up questions
+                news_prompt = prompt + "\nPlease reference the previous headlines and provide specific dates and times in your response."
             
             grok_response = get_grok_response(news_prompt)
-            st.session_state.last_news = grok_response  # Store the news response
             
-            with st.chat_message("assistant"):
-                st.markdown(grok_response)
-            st.session_state.messages.append({"role": "assistant", "content": grok_response})
+            # Add assistant's response to conversation
+            st.chat_message("assistant").markdown(grok_response)
+            st.session_state.conversation.append({"role": "assistant", "content": grok_response})
 
         else:
             # Handle non-news requests with Claude
+            messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]]
+            messages.append({"role": "user", "content": prompt})
+            
             response = anthropic.messages.create(
                 model="claude-3-opus-20240229",
                 max_tokens=1024,
-                system="You are a helpful AI assistant. Be direct and concise in your responses.",
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+                system="You are a helpful AI assistant. Remember context from our conversation and be direct in your responses.",
+                messages=messages
             )
             
             assistant_response = response.content[0].text if isinstance(response.content, list) else response.content
             
-            with st.chat_message("assistant"):
-                st.markdown(assistant_response)
-            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            st.chat_message("assistant").markdown(assistant_response)
+            st.session_state.conversation.append({"role": "assistant", "content": assistant_response})
             
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
 # Add a clear chat button
 if st.button("Clear Chat"):
-    st.session_state.messages = []
-    st.session_state.last_news = None
+    st.session_state.conversation = []
     st.rerun()
