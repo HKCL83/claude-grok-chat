@@ -1,18 +1,22 @@
 import streamlit as st
 from anthropic import Anthropic
+import requests
+import json
 
 # Page config
 st.set_page_config(
-    page_title="Claude Chat",
+    page_title="AI Chat Assistant",
     page_icon="🤖",
     layout="wide"
 )
 
-# Title
-st.title("AI Chat Assistant")
-
-# Initialize Anthropic client (we'll add proper API key handling next)
+# Initialize API keys from secrets
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+GROK_API_KEY = st.secrets["GROK_API_KEY"]
+
+# Title and Model Selection
+st.title("AI Chat Assistant")
+model_choice = st.selectbox("Choose AI Model", ["Claude", "Grok"])
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -29,16 +33,40 @@ if prompt := st.chat_input("What would you like to know?"):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Get Claude's response
     try:
-        response = anthropic.messages.create(
-            model="claude-3-opus-20240229",
-            messages=st.session_state.messages
-        )
-        
+        if model_choice == "Claude":
+            # Get Claude's response
+            response = anthropic.messages.create(
+                model="claude-3-opus-20240229",
+                messages=st.session_state.messages
+            )
+            assistant_response = response.content
+            
+        else:  # Grok
+            # Grok API endpoint
+            url = "https://api.grok.ai/v1/chat/completions"  # Verify this endpoint
+            headers = {
+                "Authorization": f"Bearer {st.secrets['GROK_API_KEY']}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": "grok-1",
+                "messages": st.session_state.messages
+            }
+            
+            response = requests.post(url, headers=headers, json=data)
+            response_data = response.json()
+            assistant_response = response_data['choices'][0]['message']['content']
+
         # Display assistant response
         with st.chat_message("assistant"):
-            st.markdown(response.content)
-        st.session_state.messages.append({"role": "assistant", "content": response.content})
+            st.markdown(assistant_response)
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
+
+# Add a clear chat button
+if st.button("Clear Chat"):
+    st.session_state.messages = []
+    st.experimental_rerun()
