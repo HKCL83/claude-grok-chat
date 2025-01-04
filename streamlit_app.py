@@ -46,10 +46,7 @@ if prompt := st.chat_input("What would you like to know?"):
                 }]
             )
             # Extract just the text content
-            assistant_response = str(response.content.text) if hasattr(response.content, 'text') else response.content
-            # Remove the TextBlock formatting
-            if assistant_response.startswith("[TextBlock(text='"):
-                assistant_response = assistant_response[len("[TextBlock(text='"):-len("', type='text')]")]
+            assistant_response = response.content[0].text if isinstance(response.content, list) else response.content
             
         else:  # Grok
             st.warning("Grok API access requires credits. Currently unavailable.")
