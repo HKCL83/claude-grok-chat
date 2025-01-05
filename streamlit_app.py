@@ -155,3 +155,4 @@ for message in st.session_state.conversation:
 if st.button("Clear Chat", key="clear_chat_button"):
     st.session_state.conversation = []
     st.experimental_rerun()
+    
