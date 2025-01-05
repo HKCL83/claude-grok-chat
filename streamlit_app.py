@@ -152,13 +152,21 @@ st.title("AI Assistant")
 if "conversation" not in st.session_state:
     st.session_state.conversation = []
 
-# File uploader in the sidebar
-with st.sidebar:
-    st.header("Upload Files")
+# Create a container for the input area
+input_container = st.container()
+
+# Create two columns within the container
+col1, col2 = input_container.columns([4, 1])
+
+with col1:
+    prompt = st.chat_input("What would you like to know?")
+
+with col2:
     uploaded_files = st.file_uploader(
-        "Upload images or documents",
+        "",  # Empty label to align better with chat input
         type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
-        accept_multiple_files=True
+        accept_multiple_files=True,
+        key="file_uploader"  # Adding a key to ensure proper rendering
     )
 
 # Display chat history
@@ -174,8 +182,8 @@ if uploaded_files:
         if processed_file:
             processed_files.append(processed_file)
 
-# Chat input
-if prompt := st.chat_input("What would you like to know?"):
+# Process chat input
+if prompt:
     st.chat_message("user").markdown(prompt)
     
     # Add uploaded files to the message display
