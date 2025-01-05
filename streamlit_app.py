@@ -167,6 +167,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Initialize uploaded_files
+uploaded_files = None
+
 # Create a container for the input area
 input_container = st.container()
 
@@ -192,7 +195,9 @@ if st.session_state.show_uploader:
         accept_multiple_files=True,
         key="file_uploader"
     )
-    if uploaded_files:
+
+# Process uploaded files only if files were uploaded
+if uploaded_files:
         st.session_state.show_uploader = False  # Hide uploader after files are selected
 
 # Display chat history
