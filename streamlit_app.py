@@ -107,7 +107,7 @@ st.markdown("""
     <option value="photo">Photos</option>
     <option value="file">Files</option>
 </select>
-<div id="file-uploader-container" class="file-uploader" style="display:none;">
+<div id="file-uploader-container" class="file-uploader" style="display:
     <p>Drag and drop file here<br>Limit 200MB per file • JPG, JPEG, PNG, PDF, TXT, DOCX</p>
     <button onclick="document.getElementById('file_uploader').click()">Browse files</button>
 </div>
