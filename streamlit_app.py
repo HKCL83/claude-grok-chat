@@ -53,8 +53,48 @@ def process_uploaded_file(uploaded_file):
         return None
 
 def get_grok_response(prompt, system_message="You are a real-time news assistant."):
-    # Your existing get_grok_response function
-    # ... [keep existing implementation]
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    messages = [
+        {
+            "role": "system",
+            "content": f"""You are a real-time news assistant. When reporting news:
+            1. Only report verifiable current news from {today}
+            2. If you cannot verify a story is from today, say so explicitly
+            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
+            4. If you're not sure about the date, acknowledge the uncertainty
+            5. Prioritize factual reporting over completeness
+            
+            Format: 
+            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
+        }
+    ]
+    
+    if "conversation" in st.session_state:
+        messages.extend(st.session_state.conversation[-5:])
+    
+    messages.append({
+        "role": "user",
+        "content": prompt
+    })
+    
+    data = {
+        "model": "grok-beta",
+        "messages": messages,
+        "stream": False,
+        "temperature": 0.2,
+        "max_tokens": 1000
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()['choices'][0]['message']['content']
 
 def get_claude_response(prompt, system_message="You are a versatile AI assistant.", files=None):
     messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]] if "conversation" in st.session_state else []
@@ -99,8 +139,11 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
     return response.content[0].text if isinstance(response.content, list) else response.content
 
 def get_image(prompt):
-    # Your existing get_image function
-    # ... [keep existing implementation]
+    """
+    Placeholder for image generation functionality.
+    This should be replaced with actual image generation API integration.
+    """
+    return "Image generation is not yet implemented."
 
 # Title
 st.title("AI Assistant")
