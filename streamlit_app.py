@@ -24,6 +24,20 @@ st.markdown("""
     color: #e65c00;
     font-size: 30px;
 }
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+}
+.button-container button {
+    width: 22%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background-color: #e0e0e0;
+    color: #007bff;
+}
 .custom-text-input {
     display: flex;
     align-items: center;
@@ -31,6 +45,7 @@ st.markdown("""
     border-radius: 25px;
     padding: 10px 15px;
     margin: 20px 0;
+    width: 100%;
 }
 .custom-text-input .plus-icon {
     color: #b0b0b0;
@@ -48,16 +63,8 @@ st.markdown("""
     color: #b0b0b0;
     font-size: 20px;
 }
-.button-container {
-    display: flex;
-    justify-content: space-around;
+.clear-chat {
     margin-top: 20px;
-}
-.button-container button {
-    width: 30%;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
 }
 </style>
 <div class="title-container">
@@ -68,11 +75,14 @@ st.markdown("""
     <button>Camera</button>
     <button>Photos</button>
     <button>Files</button>
-</button>
-<div class="custom-text-input">
-    <span class="plus-icon">➕</span>
-    <input type="text" placeholder="Ask anything" id="chat_input">
-    <span class="mic-icon">🎙️</span>
+    <div class="custom-text-input">
+        <span class="plus-icon">➕</span>
+        <input type="text" placeholder="Ask anything" id="chat_input">
+        <span class="mic-icon">🎙️</span>
+    </div>
+</div>
+<div class="clear-chat">
+    <button>Clear Chat</button>
 </div>
 """, unsafe_allow_html=True)
 
@@ -92,6 +102,6 @@ for message in st.session_state.conversation:
     st.write(f"{message['role'].capitalize()}: {message['content']}")
 
 # Add a clear chat button
-if st.button("Clear Chat"):
+if st.button("Clear Chat", key="clear_chat_button"):
     st.session_state.conversation = []
     st.experimental_rerun()
