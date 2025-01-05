@@ -24,47 +24,65 @@ st.markdown("""
     color: #e65c00;
     font-size: 30px;
 }
+.custom-text-input {
+    display: flex;
+    align-items: center;
+    background-color: #e0e0e0;
+    border-radius: 25px;
+    padding: 10px 15px;
+    margin: 20px 0;
+}
+.custom-text-input .plus-icon {
+    color: #b0b0b0;
+    font-size: 20px;
+    margin-right: 10px;
+}
+.custom-text-input input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+}
+.custom-text-input .mic-icon {
+    color: #b0b0b0;
+    font-size: 20px;
+}
+.button-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+.button-container button {
+    width: 30%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
 </style>
 <div class="title-container">
     <span class="star-icon">🌟</span><br>
     How can I help you this evening?
 </div>
+<div class="button-container">
+    <button>Camera</button>
+    <button>Photos</button>
+    <button>Files</button>
+</button>
+<div class="custom-text-input">
+    <span class="plus-icon">➕</span>
+    <input type="text" placeholder="Ask anything" id="chat_input">
+    <span class="mic-icon">🎙️</span>
+</div>
 """, unsafe_allow_html=True)
 
-# Chat input with file upload options
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("Camera"):
-        st.write("Camera functionality would be implemented here")
-
-with col2:
-    if st.button("Photos"):
-        uploaded_file = st.file_uploader("Choose a photo", type=["jpg", "jpeg", "png"], key="photo_uploader")
-        if uploaded_file is not None:
-            file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
-            st.write(f"Photo uploaded: {file_details['FileName']}")
-            st.session_state.conversation.append({"role": "user", "content": f"User uploaded a photo: {file_details['FileName']}"})
-
-with col3:
-    if st.button("Files"):
-        uploaded_file = st.file_uploader("Choose a file", type=["pdf", "txt", "docx"], key="file_uploader")
-        if uploaded_file is not None:
-            file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
-            st.write(f"File uploaded: {file_details['FileName']}")
-            st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file_details['FileName']}"})
-
-# Chat input
-prompt = st.text_input("What would you like to know or upload?", key="chat_input")
+# Chat input with custom styling
+prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
     try:
         # Here you would handle the chat functionality, but since we can't execute code, this is left as a placeholder.
-        # For example:
-        # response = get_response(prompt)
-        # st.session_state.conversation.append({"role": "assistant", "content": response})
-        # st.write(response)
         st.write("AI response would be here")
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
