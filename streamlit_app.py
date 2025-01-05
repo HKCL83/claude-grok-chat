@@ -73,6 +73,9 @@ st.markdown("""
     padding: 10px;
     border-radius: 10px;
     border: 1px solid #ccc;
+    background-color: #e0e0e0;
+    color: #007bff;
+    font-size: 16px;
 }
 </style>
 <div class="title-container">
