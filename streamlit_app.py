@@ -107,7 +107,7 @@ st.markdown("""
     <option value="photo">Photos</option>
     <option value="file">Files</option>
 </select>
-<div id="file-uploader-container" class="file-uploader" style="display:
+<div id="file-uploader-container" class="file-uploader" style="display:none;">
     <p>Drag and drop file here<br>Limit 200MB per file • JPG, JPEG, PNG, PDF, TXT, DOCX</p>
     <button onclick="document.getElementById('file_uploader').click()">Browse files</button>
 </div>
@@ -120,7 +120,7 @@ prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
 # File upload functionality simulation
 def handleFileUpload(files):
     for file in files:
-        st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
+st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
     st.experimental_rerun()
 
 # JavaScript functions to handle dropdown and file upload
