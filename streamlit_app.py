@@ -120,7 +120,7 @@ prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
 # File upload functionality simulation
 def handleFileUpload(files):
     for file in files:
-st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
+        st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
     st.experimental_rerun()
 
 # JavaScript functions to handle dropdown and file upload
