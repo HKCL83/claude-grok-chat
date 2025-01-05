@@ -1,4 +1,9 @@
 import streamlit as st
+from anthropic import Anthropic
+import requests
+import json
+from datetime import datetime
+from dotenv import load_dotenv
 
 # Page config
 st.set_page_config(
@@ -7,119 +12,70 @@ st.set_page_config(
     layout="wide"
 )
 
+# Initialize API keys from secrets
+anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+GROK_API_KEY = st.secrets["GROK_API_KEY"]
+
+def get_grok_response(prompt, system_message="You are a real-time news assistant."):
+    # ... (Keep the existing function as is)
+
+def get_claude_response(prompt, system_message="You are a versatile AI assistant."):
+    # ... (Keep the existing function as is)
+
+def get_image(prompt):
+    # This function is a placeholder for when you have an actual image generation API from Grok
+    return "Image would be generated here if API was available."
+
+# Title
+st.title("AI Assistant")
+
 # Initialize conversation history
 if "conversation" not in st.session_state:
     st.session_state.conversation = []
 
-# Title
-st.markdown("""
-<style>
-.title-container {
-    text-align: center;
-    padding: 50px 0;
-    font-size: 24px;
-    color: #4a4a4a;
-}
-.star-icon {
-    color: #e65c00;
-    font-size: 30px;
-}
-.button-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-}
-.button-container button {
-    width: 22%;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    background-color: #e0e0e0;
-    color: #007bff;
-    font-size: 16px;
-}
-.custom-text-input {
-    display: flex;
-    align-items: center;
-    background-color: #e0e0e0;
-    border-radius: 25px;
-    padding: 10px 15px;
-    margin: 20px 0;
-    width: 100%;
-}
-.custom-text-input .plus-icon {
-    color: #b0b0b0;
-    font-size: 20px;
-    margin-right: 10px;
-    cursor: pointer;
-}
-.custom-text-input input {
-    background: none;
-    border: none;
-    outline: none;
-    width: 100%;
-    font-size: 16px;
-}
-.custom-text-input .mic-icon {
-    color: #b0b0b0;
-    font-size: 20px;
-}
-.clear-chat {
-    margin-top: 20px;
-}
-.clear-chat button {
-    width: 100%;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    background-color: #e0e0e0;
-    color: #007bff;
-    font-size: 16px;
-}
-</style>
-<div class="title-container">
-    <span class="star-icon">🌟</span><br>
-    How can I help you this evening?
-</div>
-<div class="button-container">
-    <button>Camera</button>
-    <button>Photos</button>
-    <button>Files</button>
-    <div class="custom-text-input">
-        <span class="plus-icon" onclick="document.getElementById('file_uploader').click()">➕</span>
-        <input type="text" placeholder="Ask anything" id="chat_input">
-        <span class="mic-icon">🎙️</span>
-    </div>
-</div>
-<div class="clear-chat">
-    <button onclick="document.getElementById('clear_chat_button').click()">Clear Chat</button>
-</div>
-<input type="file" id="file_uploader" style="display:none;" multiple onchange="handleFileUpload(this.files)">
-""", unsafe_allow_html=True)
+# Display chat history
+for message in st.session_state.conversation:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# Chat input with custom styling
-prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
+# Chat input with file upload
+prompt = st.chat_input("What would you like to know or upload?")
+file_uploader = st.file_uploader("Upload an image or file", type=["jpg", "jpeg", "png", "pdf"])
 
-# File upload functionality simulation
-def handleFileUpload(files):
-    for file in files:
-        st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
-    st.experimental_rerun()
+if prompt or file_uploader:
+    if prompt:
+        st.chat_message("user").markdown(prompt)
+        st.session_state.conversation.append({"role": "user", "content": prompt})
+    elif file_uploader:
+        # Handle file upload
+        file_details = {"FileName": file_uploader.name, "FileType": file_uploader.type}
+        st.chat_message("user").markdown(f"User uploaded a file: {file_details['FileName']}")
+        st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file_details['FileName']}"})
 
-if prompt:
-    st.session_state.conversation.append({"role": "user", "content": prompt})
     try:
-        # Here you would handle the chat functionality, but since we can't execute code, this is left as a placeholder.
-        st.write("AI response would be here")
+        if "latest news" in prompt.lower() or "current events" in prompt.lower():
+            news_response = get_grok_response(prompt, "You are a real-time news assistant.")
+            st.chat_message("assistant").markdown(news_response)
+            st.session_state.conversation.append({"role": "assistant", "content": news_response})
+        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+            image_response = get_image(prompt)
+            st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+            st.session_state.conversation.append({"role": "assistant", "content": image_response})
+        else:
+            if file_uploader:
+                # Here you might want to process the file. Since we can't actually execute code or generate images:
+                file_response = f"File {file_uploader.name} has been uploaded and could be processed here."
+                st.chat_message("assistant").markdown(file_response)
+                st.session_state.conversation.append({"role": "assistant", "content": file_response})
+            else:
+                claude_response = get_claude_response(prompt)
+                st.chat_message("assistant").markdown(claude_response)
+                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+            
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-# Display chat history
-for message in st.session_state.conversation:
-    st.write(f"{message['role'].capitalize()}: {message['content']}")
-
 # Add a clear chat button
-if st.button("Clear Chat", key="clear_chat_button"):
+if st.button("Clear Chat"):
     st.session_state.conversation = []
-    st.experimental_rerun()
+    st.rerun()
