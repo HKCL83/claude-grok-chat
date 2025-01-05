@@ -65,8 +65,18 @@ if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
 
     try:
-        # ... (Keep the existing logic for handling prompts)
-        
+        if "latest news" in prompt.lower() or "current events" in prompt.lower():
+            news_response = get_grok_response(prompt, "You are a real-time news assistant.")
+            st.chat_message("assistant").markdown(news_response)
+            st.session_state.conversation.append({"role": "assistant", "content": news_response})
+        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+            image_response = get_image(prompt)
+            st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+            st.session_state.conversation.append({"role": "assistant", "content": image_response})
+        else:
+            claude_response = get_claude_response(prompt)
+            st.chat_message("assistant").markdown(claude_response)
+            st.session_state.conversation.append({"role": "assistant", "content": claude_response})
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
