@@ -77,9 +77,13 @@ st.markdown("""
     color: #007bff;
     font-size: 16px;
 }
-.dropdown-container {
+.file-uploader {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 20px;
     margin-top: 20px;
-    display: none;
+    text-align: center;
+    background-color: #f4f4f4;
 }
 </style>
 <div class="title-container">
@@ -90,7 +94,7 @@ st.markdown("""
     <button>Photos</button>
     <button>Files</button>
     <div class="custom-text-input">
-        <span class="plus-icon" onclick="document.getElementById('dropdown-container').style.display = 'block';">➕</span>
+        <span class="plus-icon" onclick="document.getElementById('upload-dropdown').click()">➕</span>
         <input type="text" placeholder="Ask anything" id="chat_input">
         <span class="mic-icon">🎙️</span>
     </div>
@@ -98,13 +102,16 @@ st.markdown("""
 <div class="clear-chat">
     <button onclick="document.getElementById('clear_chat_button').click()">Clear Chat</button>
 </div>
-<div id="dropdown-container" class="dropdown-container">
-    <select id="upload-dropdown" onchange="handleDropdownChange(this.value); this.selectedIndex = 0;">
-        <option value="" disabled selected>Select an option</option>
-        <option value="photo">Photos</option>
-        <option value="file">Files</option>
-    </select>
+<select id="upload-dropdown" style="display:none;" onchange="handleDropdownChange(this.value); this.selectedIndex = 0;">
+    <option value="" disabled selected>Select an option</option>
+    <option value="photo">Photos</option>
+    <option value="file">Files</option>
+</select>
+<div id="file-uploader-container" class="file-uploader" style="display:none;">
+    <p>Drag and drop file here<br>Limit 200MB per file • JPG, JPEG, PNG, PDF, TXT, DOCX</p>
+    <button onclick="document.getElementById('file_uploader').click()">Browse files</button>
 </div>
+<input type="file" id="file_uploader" style="display:none;" multiple onchange="handleFileUpload(this.files)">
 """, unsafe_allow_html=True)
 
 # Chat input with custom styling
@@ -116,26 +123,21 @@ def handleFileUpload(files):
         st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
     st.experimental_rerun()
 
-# JavaScript function to handle dropdown change
+# JavaScript functions to handle dropdown and file upload
 st.markdown("""
 <script>
 function handleDropdownChange(value) {
-    if (value === 'photo') {
-        document.getElementById('file_uploader').click();
-    } else if (value === 'file') {
-        document.getElementById('file_uploader').click();
+    if (value === 'photo' || value === 'file') {
+        document.getElementById('file-uploader-container').style.display = 'block';
     }
-    document.getElementById('dropdown-container').style.display = 'none';
+}
+function handleFileUpload(files) {
+    // Here you would handle file upload in JavaScript, but we can't execute this in Streamlit
+    console.log('Files uploaded:', files);
+    document.getElementById('file-uploader-container').style.display = 'none';
 }
 </script>
 """, unsafe_allow_html=True)
-
-# Hidden file uploader
-uploaded_file = st.file_uploader("Choose a file", type=["jpg", "jpeg", "png", "pdf", "txt", "docx"], key="file_uploader", label_visibility="hidden")
-
-if uploaded_file is not None:
-    file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
-    st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file_details['FileName']}"})
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
