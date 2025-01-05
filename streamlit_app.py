@@ -37,6 +37,7 @@ st.markdown("""
     border: 1px solid #ccc;
     background-color: #e0e0e0;
     color: #007bff;
+    font-size: 16px;
 }
 .custom-text-input {
     display: flex;
@@ -51,6 +52,7 @@ st.markdown("""
     color: #b0b0b0;
     font-size: 20px;
     margin-right: 10px;
+    cursor: pointer;
 }
 .custom-text-input input {
     background: none;
@@ -66,6 +68,12 @@ st.markdown("""
 .clear-chat {
     margin-top: 20px;
 }
+.clear-chat button {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
 </style>
 <div class="title-container">
     <span class="star-icon">🌟</span><br>
@@ -76,18 +84,25 @@ st.markdown("""
     <button>Photos</button>
     <button>Files</button>
     <div class="custom-text-input">
-        <span class="plus-icon">➕</span>
+        <span class="plus-icon" onclick="document.getElementById('file_uploader').click()">➕</span>
         <input type="text" placeholder="Ask anything" id="chat_input">
         <span class="mic-icon">🎙️</span>
     </div>
 </div>
 <div class="clear-chat">
-    <button>Clear Chat</button>
+    <button onclick="document.getElementById('clear_chat_button').click()">Clear Chat</button>
 </div>
+<input type="file" id="file_uploader" style="display:none;" multiple onchange="handleFileUpload(this.files)">
 """, unsafe_allow_html=True)
 
 # Chat input with custom styling
 prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
+
+# File upload functionality simulation
+def handleFileUpload(files):
+    for file in files:
+        st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
+    st.experimental_rerun()
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
