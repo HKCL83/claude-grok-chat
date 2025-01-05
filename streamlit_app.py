@@ -127,8 +127,121 @@ if st.session_state.show_upload:
             label_visibility="collapsed"
         )
 
-# Rest of your existing functions (process_uploaded_file, get_grok_response, get_claude_response)
-[Your existing function implementations here]
+# Function implementations
+def process_uploaded_file(uploaded_file):
+    """Process uploaded file and return its content"""
+    if uploaded_file is None:
+        return None
+    
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+    
+    if file_extension in ['png', 'jpg', 'jpeg']:
+        return {
+            'type': 'image',
+            'content': encode_image_to_base64(uploaded_file)
+        }
+    elif file_extension in ['pdf', 'txt', 'doc', 'docx']:
+        try:
+            content = uploaded_file.read()
+            if isinstance(content, bytes):
+                content = content.decode('utf-8')
+            return {
+                'type': 'document',
+                'content': content
+            }
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+            return None
+    else:
+        st.error("Unsupported file type")
+        return None
+
+def encode_image_to_base64(image_file):
+    """Convert uploaded image to base64 string"""
+    return base64.b64encode(image_file.getvalue()).decode('utf-8')
+
+def get_grok_response(prompt):
+    """Get response from Grok API"""
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    messages = [
+        {
+            "role": "system",
+            "content": f"""You are a real-time news assistant. When reporting news:
+            1. Only report verifiable current news from {today}
+            2. If you cannot verify a story is from today, say so explicitly
+            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs
+            4. If you're not sure about the date, acknowledge the uncertainty
+            5. Prioritize factual reporting over completeness"""
+        }
+    ]
+    
+    if "conversation" in st.session_state:
+        messages.extend(st.session_state.conversation[-5:])
+    
+    messages.append({
+        "role": "user",
+        "content": prompt
+    })
+    
+    data = {
+        "model": "grok-beta",
+        "messages": messages,
+        "stream": False,
+        "temperature": 0.2,
+        "max_tokens": 1000
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()['choices'][0]['message']['content']
+
+def get_claude_response(prompt, files=None):
+    """Get response from Claude API"""
+    messages = [{"role": m["role"], "content": m["content"]} 
+               for m in st.session_state.get('conversation', [])[-5:]]
+    
+    if files:
+        file_contents = []
+        for file in files:
+            if file['type'] == 'image':
+                file_contents.append({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": file['content']
+                    }
+                })
+            elif file['type'] == 'document':
+                file_contents.append({
+                    "type": "text",
+                    "text": file['content']
+                })
+        
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                *file_contents
+            ]
+        })
+    else:
+        messages.append({"role": "user", "content": prompt})
+    
+    response = anthropic.messages.create(
+        model="claude-3-opus-20240229",
+        max_tokens=1024,
+        messages=messages
+    )
+    
+    return response.content[0].text if isinstance(response.content, list) else response.content
 
 # Chat history display
 chat_container = st.container()
