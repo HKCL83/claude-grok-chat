@@ -54,8 +54,40 @@ with col3:
             st.write(f"File uploaded: {file_details['FileName']}")
             st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file_details['FileName']}"})
 
-# Chat input
-prompt = st.text_input("What would you like to know or upload?", key="chat_input")
+# Custom styled text input
+st.markdown("""
+<style>
+.custom-text-input {
+    display: flex;
+    align-items: center;
+    background-color: #e0e0e0;
+    border-radius: 25px;
+    padding: 10px 15px;
+    margin: 20px 0;
+}
+.custom-text-input .plus-icon {
+    color: #b0b0b0;
+    font-size: 20px;
+    margin-right: 10px;
+}
+.custom-text-input input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 16px;
+}
+.custom-text-input .mic-icon {
+    color: #b0b0b0;
+    font-size: 20px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Chat input with custom styling
+with st.container():
+    st.markdown('<div class="custom-text-input"><span class="plus-icon">➕</span><input type="text" placeholder="Ask anything" id="chat_input"><span class="mic-icon">🎙️</span></div>', unsafe_allow_html=True)
+    prompt = st.text_input("", key="chat_input", placeholder="Ask anything")
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
