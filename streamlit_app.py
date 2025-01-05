@@ -77,39 +77,23 @@ st.markdown("""
     color: #007bff;
     font-size: 16px;
 }
-.file-uploader {
-    border: 2px dashed #ccc;
-    border-radius: 10px;
-    padding: 20px;
-    margin-top: 20px;
-    text-align: center;
-    background-color: #f4f4f4;
-}
 </style>
 <div class="title-container">
     <span class="star-icon">🌟</span><br>
     How can I help you this evening?
 </div>
 <div class="button-container">
+    <button>Camera</button>
     <button>Photos</button>
     <button>Files</button>
     <div class="custom-text-input">
-        <span class="plus-icon" onclick="document.getElementById('upload-dropdown').click()">➕</span>
+        <span class="plus-icon" onclick="document.getElementById('file_uploader').click()">➕</span>
         <input type="text" placeholder="Ask anything" id="chat_input">
         <span class="mic-icon">🎙️</span>
     </div>
 </div>
 <div class="clear-chat">
     <button onclick="document.getElementById('clear_chat_button').click()">Clear Chat</button>
-</div>
-<select id="upload-dropdown" style="display:none;" onchange="handleDropdownChange(this.value); this.selectedIndex = 0;">
-    <option value="" disabled selected>Select an option</option>
-    <option value="photo">Photos</option>
-    <option value="file">Files</option>
-</select>
-<div id="file-uploader-container" class="file-uploader" style="display:none;">
-    <p>Drag and drop file here<br>Limit 200MB per file • JPG, JPEG, PNG, PDF, TXT, DOCX</p>
-    <button onclick="document.getElementById('file_uploader').click()">Browse files</button>
 </div>
 <input type="file" id="file_uploader" style="display:none;" multiple onchange="handleFileUpload(this.files)">
 """, unsafe_allow_html=True)
@@ -122,22 +106,6 @@ def handleFileUpload(files):
     for file in files:
         st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
     st.experimental_rerun()
-
-# JavaScript functions to handle dropdown and file upload
-st.markdown("""
-<script>
-function handleDropdownChange(value) {
-    if (value === 'photo' || value === 'file') {
-        document.getElementById('file-uploader-container').style.display = 'block';
-    }
-}
-function handleFileUpload(files) {
-    // Here you would handle file upload in JavaScript, but we can't execute this in Streamlit
-    console.log('Files uploaded:', files);
-    document.getElementById('file-uploader-container').style.display = 'none';
-}
-</script>
-""", unsafe_allow_html=True)
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
@@ -155,4 +123,3 @@ for message in st.session_state.conversation:
 if st.button("Clear Chat", key="clear_chat_button"):
     st.session_state.conversation = []
     st.experimental_rerun()
-    
