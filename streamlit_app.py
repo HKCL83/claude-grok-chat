@@ -167,37 +167,36 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize uploaded_files
-uploaded_files = None
+# Main chat container
+chat_container = st.container()
 
-# Create a container for the input area
-input_container = st.container()
+# Chat input area at the bottom
+input_area = st.container()
 
-# Create columns for input area: chat input, plus button
-col1, col2 = input_container.columns([6, 1])
-
-with col1:
-    prompt = st.chat_input("What would you like to know?")
-
-with col2:
-    # Plus button for file upload
-    if st.button("+"):
-        st.session_state.show_uploader = True
-
-# Show file uploader if button was clicked
-if 'show_uploader' not in st.session_state:
-    st.session_state.show_uploader = False
+with input_area:
+    col1, col2 = st.columns([6, 1])
     
-if st.session_state.show_uploader:
-    uploaded_files = st.file_uploader(
-        "Drag and drop files here",
-        type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
-        accept_multiple_files=True,
-        key="file_uploader"
-    )
+    # Text input in the first column
+    with col1:
+        user_input = st.text_input("", placeholder="What would you like to know?", key="chat_input")
+    
+    # Upload button in the second column
+    with col2:
+        uploaded_files = st.file_uploader(
+            "",
+            type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
+            accept_multiple_files=True,
+            key="uploader",
+            label_visibility="collapsed"
+        )
 
-# Process uploaded files only if files were uploaded
+# Process uploaded files
+processed_files = []
 if uploaded_files:
+    for uploaded_file in uploaded_files:
+        processed_file = process_uploaded_file(uploaded_file)
+        if processed_file:
+            processed_files.append(processed_file)
         st.session_state.show_uploader = False  # Hide uploader after files are selected
 
 # Display chat history
