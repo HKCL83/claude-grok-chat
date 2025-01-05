@@ -152,22 +152,48 @@ st.title("AI Assistant")
 if "conversation" not in st.session_state:
     st.session_state.conversation = []
 
+# Custom CSS for the plus button
+st.markdown("""
+    <style>
+    .stButton > button {
+        border-radius: 50%;
+        padding: 0px 13px;
+        font-size: 24px;
+        font-weight: lighter;
+        margin: 0;
+        height: 38px;
+        line-height: 38px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Create a container for the input area
 input_container = st.container()
 
-# Create two columns within the container
-col1, col2 = input_container.columns([4, 1])
+# Create columns for input area: chat input, plus button
+col1, col2 = input_container.columns([6, 1])
 
 with col1:
     prompt = st.chat_input("What would you like to know?")
 
 with col2:
+    # Plus button for file upload
+    if st.button("+"):
+        st.session_state.show_uploader = True
+
+# Show file uploader if button was clicked
+if 'show_uploader' not in st.session_state:
+    st.session_state.show_uploader = False
+    
+if st.session_state.show_uploader:
     uploaded_files = st.file_uploader(
-        "",  # Empty label to align better with chat input
+        "Drag and drop files here",
         type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
         accept_multiple_files=True,
-        key="file_uploader"  # Adding a key to ensure proper rendering
+        key="file_uploader"
     )
+    if uploaded_files:
+        st.session_state.show_uploader = False  # Hide uploader after files are selected
 
 # Display chat history
 for message in st.session_state.conversation:
@@ -198,7 +224,20 @@ if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
 
     try:
-        if "latest news" in prompt.lower() or "current events" in prompt.lower():
+        # Keywords that indicate current events or news queries
+        news_keywords = [
+            "latest news", "current events", "what's happening",
+            "recent news", "today's news", "breaking news",
+            "current situation", "latest updates", "news today",
+            "what's going on", "recent developments",
+            "weather", "forecast"  # Added weather-related keywords
+        ]
+        
+        # Check if the prompt contains any news keywords
+        is_news_query = any(keyword in prompt.lower() for keyword in news_keywords)
+        
+        if is_news_query:
+            # Use Grok for current events, news, and weather queries
             news_response = get_grok_response(prompt)
             st.chat_message("assistant").markdown(news_response)
             st.session_state.conversation.append({"role": "assistant", "content": news_response})
@@ -207,6 +246,7 @@ if prompt:
             st.chat_message("assistant").markdown(f"Image generated: {image_response}")
             st.session_state.conversation.append({"role": "assistant", "content": image_response})
         else:
+            # Use Claude for all other queries
             claude_response = get_claude_response(prompt, files=processed_files)
             st.chat_message("assistant").markdown(claude_response)
             st.session_state.conversation.append({"role": "assistant", "content": claude_response})
