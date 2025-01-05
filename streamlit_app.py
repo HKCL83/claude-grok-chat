@@ -77,17 +77,20 @@ st.markdown("""
     color: #007bff;
     font-size: 16px;
 }
+.dropdown-container {
+    margin-top: 20px;
+    display: none;
+}
 </style>
 <div class="title-container">
     <span class="star-icon">🌟</span><br>
     How can I help you this evening?
 </div>
 <div class="button-container">
-    <button>Camera</button>
     <button>Photos</button>
     <button>Files</button>
     <div class="custom-text-input">
-        <span class="plus-icon" onclick="document.getElementById('file_uploader').click()">➕</span>
+        <span class="plus-icon" onclick="document.getElementById('dropdown-container').style.display = 'block';">➕</span>
         <input type="text" placeholder="Ask anything" id="chat_input">
         <span class="mic-icon">🎙️</span>
     </div>
@@ -95,7 +98,13 @@ st.markdown("""
 <div class="clear-chat">
     <button onclick="document.getElementById('clear_chat_button').click()">Clear Chat</button>
 </div>
-<input type="file" id="file_uploader" style="display:none;" multiple onchange="handleFileUpload(this.files)">
+<div id="dropdown-container" class="dropdown-container">
+    <select id="upload-dropdown" onchange="handleDropdownChange(this.value); this.selectedIndex = 0;">
+        <option value="" disabled selected>Select an option</option>
+        <option value="photo">Photos</option>
+        <option value="file">Files</option>
+    </select>
+</div>
 """, unsafe_allow_html=True)
 
 # Chat input with custom styling
@@ -106,6 +115,27 @@ def handleFileUpload(files):
     for file in files:
         st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file.name}"})
     st.experimental_rerun()
+
+# JavaScript function to handle dropdown change
+st.markdown("""
+<script>
+function handleDropdownChange(value) {
+    if (value === 'photo') {
+        document.getElementById('file_uploader').click();
+    } else if (value === 'file') {
+        document.getElementById('file_uploader').click();
+    }
+    document.getElementById('dropdown-container').style.display = 'none';
+}
+</script>
+""", unsafe_allow_html=True)
+
+# Hidden file uploader
+uploaded_file = st.file_uploader("Choose a file", type=["jpg", "jpeg", "png", "pdf", "txt", "docx"], key="file_uploader", label_visibility="hidden")
+
+if uploaded_file is not None:
+    file_details = {"FileName": uploaded_file.name, "FileType": uploaded_file.type}
+    st.session_state.conversation.append({"role": "user", "content": f"User uploaded a file: {file_details['FileName']}"})
 
 if prompt:
     st.session_state.conversation.append({"role": "user", "content": prompt})
