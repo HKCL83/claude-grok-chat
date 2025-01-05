@@ -7,6 +7,14 @@ from dotenv import load_dotenv
 import base64
 from io import BytesIO
 
+# Must be the first Streamlit command
+st.set_page_config(
+    page_title="AI Assistant",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
 # Custom CSS to match Claude's interface
 st.markdown("""
     <style>
@@ -79,55 +87,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Initialize Streamlit
-st.set_page_config(
-    page_title="AI Assistant",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
 # Initialize API clients
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-# Input area at the top
-input_container = st.container()
-with input_container:
-    col1, col2 = st.columns([6, 1])
-    
-    with col1:
-        user_input = st.text_input("", placeholder="What would you like to know?", key="chat_input")
-    
-    with col2:
-        if st.button("+", key="plus_button", help="Upload files"):
-            st.session_state.show_upload = True
-
-# File upload area
-if 'show_upload' not in st.session_state:
-    st.session_state.show_upload = False
-
-if st.session_state.show_upload:
-    upload_container = st.container()
-    with upload_container:
-        st.markdown("""
-            <div class="upload-text">
-                Drag and drop files here<br>
-                <span style="color: #9ca3af; font-size: 12px;">
-                    Limit 200MB per file • PNG, JPG, JPEG, PDF, TXT, DOC, DOCX
-                </span>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        uploaded_files = st.file_uploader(
-            "",
-            type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
-            accept_multiple_files=True,
-            key="file_uploader",
-            label_visibility="collapsed"
-        )
-
-# Function implementations
 def process_uploaded_file(uploaded_file):
     """Process uploaded file and return its content"""
     if uploaded_file is None:
@@ -243,6 +206,46 @@ def get_claude_response(prompt, files=None):
     
     return response.content[0].text if isinstance(response.content, list) else response.content
 
+# Initialize session state for conversation if it doesn't exist
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+
+# Input area at the top
+input_container = st.container()
+with input_container:
+    col1, col2 = st.columns([6, 1])
+    
+    with col1:
+        user_input = st.text_input("", placeholder="What would you like to know?", key="chat_input")
+    
+    with col2:
+        if st.button("+", key="plus_button", help="Upload files"):
+            st.session_state.show_upload = True
+
+# File upload area
+if 'show_upload' not in st.session_state:
+    st.session_state.show_upload = False
+
+if st.session_state.show_upload:
+    upload_container = st.container()
+    with upload_container:
+        st.markdown("""
+            <div class="upload-text">
+                Drag and drop files here<br>
+                <span style="color: #9ca3af; font-size: 12px;">
+                    Limit 200MB per file • PNG, JPG, JPEG, PDF, TXT, DOC, DOCX
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        uploaded_files = st.file_uploader(
+            "",
+            type=['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx'],
+            accept_multiple_files=True,
+            key="file_uploader",
+            label_visibility="collapsed"
+        )
+
 # Chat history display
 chat_container = st.container()
 with chat_container:
@@ -264,8 +267,6 @@ if user_input:
             
             st.chat_message("assistant").write(response)
             
-            if 'conversation' not in st.session_state:
-                st.session_state.conversation = []
             st.session_state.conversation.extend([
                 {"role": "user", "content": user_input},
                 {"role": "assistant", "content": response}
