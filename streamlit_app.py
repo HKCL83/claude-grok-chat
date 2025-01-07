@@ -146,7 +146,7 @@ with container:
         .stButton button {
             float: right;
             margin-top: -38px;
-            margin-right: 110px;
+            margin-right: 10px;  /* Changed from 110px to 10px to be closer to Browse */
         }
         </style>
         """, 
