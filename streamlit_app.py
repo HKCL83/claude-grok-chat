@@ -101,58 +101,56 @@ st.title("AI Assistant")
 if "conversation" not in st.session_state:
     st.session_state.conversation = []
 
-# Chat input first
-if prompt := st.chat_input("What would you like to know?"):
-    st.chat_message("user").markdown(prompt)
-    st.session_state.conversation.append({"role": "user", "content": prompt})
+# Create a container for chat history
+chat_container = st.container()
 
-    try:
-        if "latest news" in prompt.lower() or "current events" in prompt.lower():
-            news_response = get_grok_response(prompt, "You are a real-time news assistant.")
-            st.chat_message("assistant").markdown(news_response)
-            st.session_state.conversation.append({"role": "assistant", "content": news_response})
-        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-            image_response = get_image(prompt)
-            st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-            st.session_state.conversation.append({"role": "assistant", "content": image_response})
-        else:
-            claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-            st.chat_message("assistant").markdown(claude_response)
-            st.session_state.conversation.append({"role": "assistant", "content": claude_response})
-            
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+# Create a container for input and buttons at the bottom
+input_container = st.container()
 
-# Display chat history
-for message in st.session_state.conversation:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Display chat history in the chat container
+with chat_container:
+    for message in st.session_state.conversation:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-# Create a container for the file uploader and buttons
-container = st.container()
+# Handle input and buttons in the input container
+with input_container:
+    # Chat input first
+    if prompt := st.chat_input("What would you like to know?"):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.conversation.append({"role": "user", "content": prompt})
 
-with container:
-    uploaded_files = st.file_uploader(
-        "Files",
-        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-        accept_multiple_files=True,
-        key="file_uploader"
-    )
-
-    # Put the Clear Chat button next to Browse files using CSS
-    st.markdown(
-        """
-        <style>
-        .stButton button {
-            float: right;
-            margin-top: -38px;
-            margin-right: 10px;  /* Changed from 110px to 10px to be closer to Browse */
-        }
-        </style>
-        """, 
-        unsafe_allow_html=True
-    )
+        try:
+            if "latest news" in prompt.lower() or "current events" in prompt.lower():
+                news_response = get_grok_response(prompt, "You are a real-time news assistant.")
+                st.chat_message("assistant").markdown(news_response)
+                st.session_state.conversation.append({"role": "assistant", "content": news_response})
+            elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+                image_response = get_image(prompt)
+                st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+                st.session_state.conversation.append({"role": "assistant", "content": image_response})
+            else:
+                claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+                st.chat_message("assistant").markdown(claude_response)
+                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+                
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
     
-    if st.button("Clear Chat", key="clear_button"):
-        st.session_state.conversation = []
-        st.rerun()
+    # Create two columns for file upload and clear button
+    col1, col2 = st.columns([3, 1])
+    
+    # Add the file uploader to the first column
+    with col1:
+        uploaded_files = st.file_uploader(
+            "Files",
+            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+            accept_multiple_files=True,
+            key="file_uploader"
+        )
+    
+    # Add the clear button to the second column
+    with col2:
+        if st.button("Clear Chat", key="clear_button"):
+            st.session_state.conversation = []
+            st.rerun()
