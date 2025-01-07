@@ -137,20 +137,25 @@ with input_container:
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
     
-    # Create two columns for file upload and clear button
-    col1, col2 = st.columns([3, 1])
+    # Create a single column for both uploader and clear button
+    uploaded_files = st.file_uploader(
+        "Files",
+        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+        accept_multiple_files=True,
+        key="file_uploader"
+    )
     
-    # Add the file uploader to the first column
-    with col1:
-        uploaded_files = st.file_uploader(
-            "Files",
-            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-            accept_multiple_files=True,
-            key="file_uploader"
-        )
+    # Add CSS to put clear button next to browse
+    st.markdown("""
+        <style>
+        .stButton button {
+            margin-left: 150px;
+            margin-top: -38px;
+            display: inline-block;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
-    # Add the clear button to the second column
-    with col2:
-        if st.button("Clear Chat", key="clear_button"):
-            st.session_state.conversation = []
-            st.rerun()
+    if st.button("Clear Chat", key="clear_button"):
+        st.session_state.conversation = []
+        st.rerun()
