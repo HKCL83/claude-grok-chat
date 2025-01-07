@@ -137,7 +137,10 @@ with input_container:
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
     
-    # Create two columns for file upload and clear button
+    # Create space to push elements to bottom
+    st.empty().markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
+    
+    # Add both the file uploader and clear button in the same column
     col1, col2 = st.columns([3, 1])
     
     # Add both the file uploader and clear button in the first column
