@@ -107,42 +107,43 @@ for message in st.session_state.conversation:
         st.markdown(message["content"])
 
 # Create space to push elements to bottom
-st.empty().markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
+    st.empty().markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
 
-# Chat input
-if prompt := st.chat_input("What would you like to know?"):
-    st.chat_message("user").markdown(prompt)
-    st.session_state.conversation.append({"role": "user", "content": prompt})
-
-    try:
-        if "latest news" in prompt.lower() or "current events" in prompt.lower():
-            news_response = get_grok_response(prompt, "You are a real-time news assistant.")
-            st.chat_message("assistant").markdown(news_response)
-            st.session_state.conversation.append({"role": "assistant", "content": news_response})
-        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-            image_response = get_image(prompt)
-            st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-            st.session_state.conversation.append({"role": "assistant", "content": image_response})
-        else:
-            claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-            st.chat_message("assistant").markdown(claude_response)
-            st.session_state.conversation.append({"role": "assistant", "content": claude_response})
-            
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-
-# Add both the file uploader and clear button in the same column
-col1, col2 = st.columns([3, 1])
-
-# Add both the file uploader and clear button in the first column
-with col1:
-    uploaded_files = st.file_uploader(
-        "Files",
-        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-        accept_multiple_files=True,
-        key="file_uploader"
-    )
+    # Add both the file uploader and clear button in the first column
+    col1, col2 = st.columns([3, 1])
     
-    if st.button("Clear Chat", key="clear_button", help="Clear the chat history"):
-        st.session_state.conversation = []
-        st.rerun()
+    with col1:
+        # Chat input first
+        if prompt := st.chat_input("What would you like to know?"):
+            st.chat_message("user").markdown(prompt)
+            st.session_state.conversation.append({"role": "user", "content": prompt})
+
+            try:
+                if "latest news" in prompt.lower() or "current events" in prompt.lower():
+                    news_response = get_grok_response(prompt, "You are a real-time news assistant.")
+                    st.chat_message("assistant").markdown(news_response)
+                    st.session_state.conversation.append({"role": "assistant", "content": news_response})
+                elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+                    image_response = get_image(prompt)
+                    st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+                    st.session_state.conversation.append({"role": "assistant", "content": image_response})
+                else:
+                    claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+                    st.chat_message("assistant").markdown(claude_response)
+                    st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+                    
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+        
+        # Clear Chat button
+        if st.button("Clear Chat", key="clear_button", help="Clear the chat history"):
+            st.session_state.conversation = []
+            st.rerun()
+            
+        # Then the file uploader
+        uploaded_files = st.file_uploader(
+            "Files",
+            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+            accept_multiple_files=True,
+            key="file_uploader"
+        )
