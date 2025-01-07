@@ -140,7 +140,7 @@ with input_container:
     # Create two columns for file upload and clear button
     col1, col2 = st.columns([3, 1])
     
-    # Add the file uploader to the first column
+    # Add both the file uploader and clear button in the first column
     with col1:
         uploaded_files = st.file_uploader(
             "Files",
@@ -148,18 +148,7 @@ with input_container:
             accept_multiple_files=True,
             key="file_uploader"
         )
-    
-        # Add the clear button with correct positioning
-        st.markdown("""
-            <style>
-            .stButton button {
-                position: absolute;
-                top: 0;
-                right: -120px;
-            }
-            </style>
-        """, unsafe_allow_html=True)
         
-        if st.button("Clear Chat", key="clear_button"):
+        if st.button("Clear Chat", key="clear_button", help="Clear the chat history"):
             st.session_state.conversation = []
             st.rerun()
