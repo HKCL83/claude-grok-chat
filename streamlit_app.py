@@ -67,46 +67,12 @@ for message in st.session_state.conversation:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Create a container for the input area
-input_container = st.container()
-
-# Create three columns for the buttons
-col1, col2, col3 = st.columns([2, 1, 1])
-
-with col1:
-    # File uploader for images
-    uploaded_images = st.file_uploader(
-        "Upload Images",
-        type=["png", "jpg", "jpeg"],
-        accept_multiple_files=True,
-        key="image_uploader"
-    )
-
-with col2:
-    # File uploader for documents
-    uploaded_files = st.file_uploader(
-        "Upload Documents",
-        type=["txt", "pdf", "doc", "docx", "csv"],
-        accept_multiple_files=True,
-        key="doc_uploader"
-    )
-
-with col3:
-    # Clear chat button
-    if st.button("Clear Chat", key="clear_button"):
-        st.session_state.conversation = []
-        st.rerun()
-
 # Chat input
 if prompt := st.chat_input("What would you like to know?"):
-    # Display user message
     st.chat_message("user").markdown(prompt)
     st.session_state.conversation.append({"role": "user", "content": prompt})
 
     try:
-        # Combine all uploaded files
-        all_files = (uploaded_images or []) + (uploaded_files or [])
-        
         if "latest news" in prompt.lower() or "current events" in prompt.lower():
             news_response = get_grok_response(prompt, "You are a real-time news assistant.")
             st.chat_message("assistant").markdown(news_response)
@@ -116,9 +82,30 @@ if prompt := st.chat_input("What would you like to know?"):
             st.chat_message("assistant").markdown(f"Image generated: {image_response}")
             st.session_state.conversation.append({"role": "assistant", "content": image_response})
         else:
-            claude_response = get_claude_response(prompt, files=all_files)
+            claude_response = get_claude_response(prompt, files=uploaded_files if uploaded_files else None)
             st.chat_message("assistant").markdown(claude_response)
             st.session_state.conversation.append({"role": "assistant", "content": claude_response})
             
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
+
+# Create a container for the buttons below the chat input
+button_container = st.container()
+
+# Create two columns for the buttons
+col1, col2 = st.columns(2)
+
+# File uploader in the first column
+with col1:
+    uploaded_files = st.file_uploader(
+        "Files",
+        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+        accept_multiple_files=True,
+        key="file_uploader"
+    )
+
+# Clear chat button in the second column
+with col2:
+    if st.button("Clear Chat", key="clear_button"):
+        st.session_state.conversation = []
+        st.rerun()
