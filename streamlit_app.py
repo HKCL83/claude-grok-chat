@@ -20,12 +20,31 @@ st.markdown("""
         background-color: #4dacbc;
     }
     
+    /* Create a scrollable container for chat messages */
+    .chat-container {
+        height: calc(100vh - 250px);  /* Adjust height to leave space for input */
+        overflow-y: auto;
+        margin-bottom: 10px;
+        padding-right: 10px;
+    }
+    
     /* Style chat message containers */
     .stChatMessage {
         background-color: white;
         border-radius: 10px;
         padding: 10px;
         margin: 5px 0;
+    }
+    
+    /* Fix input area at the bottom */
+    .fixed-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #4dacbc;
+        padding: 1rem;
+        z-index: 1000;
     }
     
     /* Style input container and file uploader */
@@ -48,6 +67,11 @@ st.markdown("""
     .stButton button {
         background-color: white !important;
     }
+
+    /* Add padding at the bottom for fixed input area */
+    .main-content {
+        padding-bottom: 200px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -55,84 +79,16 @@ st.markdown("""
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-def get_grok_response(prompt, system_message="You are a real-time news assistant."):
-    url = "https://api.x.ai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {GROK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    messages = [
-        {
-            "role": "system",
-            "content": f"""You are a real-time news assistant. When reporting news:
-            1. Only report verifiable current news from {today}
-            2. If you cannot verify a story is from today, say so explicitly
-            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
-            4. If you're not sure about the date, acknowledge the uncertainty
-            5. Prioritize factual reporting over completeness
-            
-            Format: 
-            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
-        }
-    ]
-    
-    if "conversation" in st.session_state:
-        messages.extend(st.session_state.conversation[-5:])
-    
-    messages.append({
-        "role": "user",
-        "content": prompt
-    })
-    
-    data = {
-        "model": "grok-beta",
-        "messages": messages,
-        "stream": False,
-        "temperature": 0.2,
-        "max_tokens": 1000
-    }
-    
-    response = requests.post(url, headers=headers, json=data)
-    response.raise_for_status()
-    return response.json()['choices'][0]['message']['content']
+[... keep all your existing functions unchanged ...]
 
-def get_claude_response(prompt, system_message="You are a versatile AI assistant.", files=None):
-    messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]] if "conversation" in st.session_state else []
-    
-    if files:
-        file_contents = []
-        for file in files:
-            file_content = file.read()
-            if isinstance(file_content, bytes):
-                file_content = file_content.decode('utf-8', errors='ignore')
-            file_contents.append({
-                "filename": file.name,
-                "content": file_content
-            })
-        
-        file_info = "\n".join([f"File: {f['filename']}\nContent:\n{f['content']}" for f in file_contents])
-        prompt = f"Files uploaded:\n{file_info}\n\n{prompt}"
-    
-    messages.append({"role": "user", "content": prompt})
-    
-    response = anthropic.messages.create(
-        model="claude-3-opus-20240229",
-        max_tokens=1024,
-        system=system_message,
-        messages=messages
-    )
-    
-    return response.content[0].text if isinstance(response.content, list) else response.content
+# Create a container for the main content
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
 
-def get_image(prompt):
-    return "Image would be generated here if API was available."
-
-# Create main container for chat history
+# Create scrollable container for chat history
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 chat_container = st.container()
 
-# Display chat history in the main container
+# Display chat history in the scrollable container
 with chat_container:
     # Initialize conversation history
     if "conversation" not in st.session_state:
@@ -143,10 +99,13 @@ with chat_container:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# Add space to push input to bottom
-st.markdown("<div style='min-height: calc(100vh - 400px);'></div>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# Chat input and controls container
+# Close main content div
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Fixed input area at the bottom
+st.markdown('<div class="fixed-bottom">', unsafe_allow_html=True)
 input_container = st.container()
 
 with input_container:
@@ -169,25 +128,27 @@ with input_container:
             st.session_state.conversation = []
             st.rerun()
 
-    # Handle the prompt
-    if prompt:
-        with chat_container:
-            st.chat_message("user").markdown(prompt)
-            st.session_state.conversation.append({"role": "user", "content": prompt})
+st.markdown('</div>', unsafe_allow_html=True)
 
-            try:
-                if "latest news" in prompt.lower() or "current events" in prompt.lower():
-                    news_response = get_grok_response(prompt)
-                    st.chat_message("assistant").markdown(news_response)
-                    st.session_state.conversation.append({"role": "assistant", "content": news_response})
-                elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-                    image_response = get_image(prompt)
-                    st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-                    st.session_state.conversation.append({"role": "assistant", "content": image_response})
-                else:
-                    claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-                    st.chat_message("assistant").markdown(claude_response)
-                    st.session_state.conversation.append({"role": "assistant", "content": claude_response})
-            
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+# Handle the prompt (keep this outside the fixed area but still functional)
+if prompt:
+    with chat_container:
+        st.chat_message("user").markdown(prompt)
+        st.session_state.conversation.append({"role": "user", "content": prompt})
+
+        try:
+            if "latest news" in prompt.lower() or "current events" in prompt.lower():
+                news_response = get_grok_response(prompt)
+                st.chat_message("assistant").markdown(news_response)
+                st.session_state.conversation.append({"role": "assistant", "content": news_response})
+            elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+                image_response = get_image(prompt)
+                st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+                st.session_state.conversation.append({"role": "assistant", "content": image_response})
+            else:
+                claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+                st.chat_message("assistant").markdown(claude_response)
+                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+        
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
