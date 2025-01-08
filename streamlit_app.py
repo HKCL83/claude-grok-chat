@@ -20,31 +20,12 @@ st.markdown("""
         background-color: #4dacbc;
     }
     
-    /* Create a scrollable container for chat messages */
-    .chat-container {
-        height: calc(100vh - 250px);  /* Adjust height to leave space for input */
-        overflow-y: auto;
-        margin-bottom: 10px;
-        padding-right: 10px;
-    }
-    
     /* Style chat message containers */
     .stChatMessage {
         background-color: white;
         border-radius: 10px;
         padding: 10px;
         margin: 5px 0;
-    }
-    
-    /* Fix input area at the bottom */
-    .fixed-bottom {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: #4dacbc;
-        padding: 1rem;
-        z-index: 1000;
     }
     
     /* Style input container and file uploader */
@@ -66,11 +47,6 @@ st.markdown("""
     /* Make buttons have white background */
     .stButton button {
         background-color: white !important;
-    }
-
-    /* Add padding at the bottom for fixed input area */
-    .main-content {
-        padding-bottom: 200px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -153,37 +129,38 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
 def get_image(prompt):
     return "Image would be generated here if API was available."
 
-# Create a container for the main content
-st.markdown('<div class="main-content">', unsafe_allow_html=True)
+# Initialize session state
+if "conversation" not in st.session_state:
+    st.session_state.conversation = []
 
-# Create scrollable container for chat history
-st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+# Main app layout
+st.title("AI Assistant")
+
+# Create two main containers
 chat_container = st.container()
+input_container = st.container()
 
-# Display chat history in the scrollable container
+# Display chat history in the chat container
 with chat_container:
-    # Initialize conversation history
-    if "conversation" not in st.session_state:
-        st.session_state.conversation = []
-
-    # Display existing messages
+    # Add height to make it scrollable
+    st.markdown("""
+        <style>
+        .element-container:has(div.stChatMessage) {
+            overflow-y: scroll;
+            max-height: calc(100vh - 200px);  # Adjust this value as needed
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     for message in st.session_state.conversation:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Close main content div
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Fixed input area at the bottom
-st.markdown('<div class="fixed-bottom">', unsafe_allow_html=True)
-input_container = st.container()
-
+# Input area with file upload and clear chat
 with input_container:
     # Chat input
     prompt = st.chat_input("What would you like to know?")
-
+    
     # File uploader and Clear Chat in columns
     col1, col2 = st.columns([4,1])
     
@@ -200,9 +177,7 @@ with input_container:
             st.session_state.conversation = []
             st.rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Handle the prompt (keep this outside the fixed area but still functional)
+# Handle the prompt
 if prompt:
     with chat_container:
         st.chat_message("user").markdown(prompt)
