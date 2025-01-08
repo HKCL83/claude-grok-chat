@@ -12,9 +12,24 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS to hide the duplicate "Drag and drop files here" text
+# Custom CSS for styling
 st.markdown("""
     <style>
+    /* Set the background color */
+    .stApp {
+        background-color: #4dacbc;
+    }
+    
+    /* Keep chat containers and inputs white */
+    .stChatMessageContent, .stChatInputContainer {
+        background-color: white !important;
+    }
+    
+    /* Style the file uploader */
+    [data-testid="stFileUploadDropzone"] {
+        background-color: white !important;
+    }
+    
     /* Hide the duplicate drag and drop text */
     [data-testid="stFileUploadDropzone"] > div:first-child {
         display: none;
@@ -23,6 +38,11 @@ st.markdown("""
     /* Ensure buttons are aligned */
     .stButton {
         margin-top: 0.5rem;
+    }
+
+    /* Keep title text readable on teal background */
+    .st-emotion-cache-ztfqz8 {
+        color: white !important;
     }
     </style>
 """, unsafe_allow_html=True)
