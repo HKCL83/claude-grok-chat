@@ -20,12 +20,30 @@ st.markdown("""
         background-color: #4dacbc;
     }
     
+    /* Style scrollable chat container */
+    .chat-container {
+        overflow-y: auto;
+        height: calc(100vh - 300px);
+        padding-bottom: 20px;
+    }
+    
     /* Style chat message containers */
     .stChatMessage {
         background-color: white;
         border-radius: 10px;
         padding: 10px;
         margin: 5px 0;
+    }
+    
+    /* Style fixed bottom section */
+    .fixed-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #4dacbc;
+        padding: 20px;
+        z-index: 1000;
     }
     
     /* Style input container and file uploader */
@@ -47,6 +65,11 @@ st.markdown("""
     /* Make buttons have white background */
     .stButton button {
         background-color: white !important;
+    }
+
+    /* Add padding to prevent content from going under fixed bottom */
+    .main-content {
+        padding-bottom: 200px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -133,69 +156,63 @@ def get_image(prompt):
 if "conversation" not in st.session_state:
     st.session_state.conversation = []
 
-# Main app layout
+# Use sidebar container to avoid scroll issues
+sidebar = st.sidebar
+sidebar.markdown("")  # This helps maintain layout
+
+# Main page layout
 st.title("AI Assistant")
 
-# Create two main containers
-chat_container = st.container()
-input_container = st.container()
-
-# Display chat history in the chat container
-with chat_container:
-    # Add height to make it scrollable
-    st.markdown("""
-        <style>
-        .element-container:has(div.stChatMessage) {
-            overflow-y: scroll;
-            max-height: calc(100vh - 200px);  # Adjust this value as needed
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
+# Create main scrollable chat container
+chat_placeholder = st.empty()
+with chat_placeholder.container():
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     for message in st.session_state.conversation:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Input area with file upload and clear chat
-with input_container:
-    # Chat input
-    prompt = st.chat_input("What would you like to know?")
-    
-    # File uploader and Clear Chat in columns
-    col1, col2 = st.columns([4,1])
-    
-    with col1:
-        uploaded_files = st.file_uploader(
-            " ",
-            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-            accept_multiple_files=True,
-            label_visibility="collapsed"
-        )
-    
-    with col2:
-        if st.button("Clear Chat", use_container_width=True):
-            st.session_state.conversation = []
-            st.rerun()
+# Create fixed bottom section using columns
+st.markdown('<div class="fixed-bottom">', unsafe_allow_html=True)
+
+# Input area
+prompt = st.chat_input("What would you like to know?")
+
+# File uploader and Clear Chat in columns
+col1, col2 = st.columns([4,1])
+
+with col1:
+    uploaded_files = st.file_uploader(
+        " ",
+        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+        accept_multiple_files=True,
+        label_visibility="collapsed"
+    )
+
+with col2:
+    if st.button("Clear Chat", use_container_width=True):
+        st.session_state.conversation = []
+        st.rerun()
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Handle the prompt
 if prompt:
-    with chat_container:
-        st.chat_message("user").markdown(prompt)
-        st.session_state.conversation.append({"role": "user", "content": prompt})
-
-        try:
-            if "latest news" in prompt.lower() or "current events" in prompt.lower():
-                news_response = get_grok_response(prompt)
-                st.chat_message("assistant").markdown(news_response)
-                st.session_state.conversation.append({"role": "assistant", "content": news_response})
-            elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-                image_response = get_image(prompt)
-                st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-                st.session_state.conversation.append({"role": "assistant", "content": image_response})
-            else:
-                claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-                st.chat_message("assistant").markdown(claude_response)
-                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+    # Add user message
+    st.session_state.conversation.append({"role": "user", "content": prompt})
+    
+    try:
+        if "latest news" in prompt.lower() or "current events" in prompt.lower():
+            news_response = get_grok_response(prompt)
+            st.session_state.conversation.append({"role": "assistant", "content": news_response})
+        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+            image_response = get_image(prompt)
+            st.session_state.conversation.append({"role": "assistant", "content": f"Image generated: {image_response}"})
+        else:
+            claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+            st.session_state.conversation.append({"role": "assistant", "content": claude_response})
         
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+        st.rerun()
+    
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
