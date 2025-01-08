@@ -15,34 +15,38 @@ st.set_page_config(
 # Custom CSS for styling
 st.markdown("""
     <style>
-    /* Set the background color */
+    /* Set the main background color */
     .stApp {
         background-color: #4dacbc;
     }
     
-    /* Keep chat containers and inputs white */
-    .stChatMessageContent, .stChatInputContainer {
-        background-color: white !important;
+    /* Style chat message containers */
+    .stChatMessage {
+        background-color: white;
+        border-radius: 10px;
+        padding: 10px;
+        margin: 5px 0;
     }
     
-    /* Style the file uploader */
-    [data-testid="stFileUploadDropzone"] {
+    /* Style input container and file uploader */
+    .stChatInputContainer, [data-testid="stFileUploadDropzone"] {
         background-color: white !important;
+        border-radius: 10px;
     }
     
-    /* Hide the duplicate drag and drop text */
+    /* Hide duplicate drag and drop text */
     [data-testid="stFileUploadDropzone"] > div:first-child {
         display: none;
     }
     
-    /* Ensure buttons are aligned */
+    /* Align buttons */
     .stButton {
         margin-top: 0.5rem;
     }
 
-    /* Keep title text readable on teal background */
-    .st-emotion-cache-ztfqz8 {
-        color: white !important;
+    /* Make buttons have white background */
+    .stButton button {
+        background-color: white !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -125,25 +129,27 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
 def get_image(prompt):
     return "Image would be generated here if API was available."
 
-# Create main container
-main_container = st.container()
+# Create main container for chat history
+chat_container = st.container()
 
-with main_container:
-    # Title
-    st.title("AI Assistant")
-
+# Display chat history in the main container
+with chat_container:
     # Initialize conversation history
     if "conversation" not in st.session_state:
         st.session_state.conversation = []
 
-    # Display chat history
+    # Display existing messages
     for message in st.session_state.conversation:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Add vertical space to push content to bottom
-    st.markdown("<div style='min-height: calc(100vh - 400px);'></div>", unsafe_allow_html=True)
+# Add space to push input to bottom
+st.markdown("<div style='min-height: calc(100vh - 400px);'></div>", unsafe_allow_html=True)
 
+# Chat input and controls container
+input_container = st.container()
+
+with input_container:
     # Chat input
     prompt = st.chat_input("What would you like to know?")
 
@@ -152,7 +158,7 @@ with main_container:
     
     with col1:
         uploaded_files = st.file_uploader(
-            " ",  # Empty label to remove extra text
+            " ",
             type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
             accept_multiple_files=True,
             label_visibility="collapsed"
@@ -165,22 +171,23 @@ with main_container:
 
     # Handle the prompt
     if prompt:
-        st.chat_message("user").markdown(prompt)
-        st.session_state.conversation.append({"role": "user", "content": prompt})
+        with chat_container:
+            st.chat_message("user").markdown(prompt)
+            st.session_state.conversation.append({"role": "user", "content": prompt})
 
-        try:
-            if "latest news" in prompt.lower() or "current events" in prompt.lower():
-                news_response = get_grok_response(prompt)
-                st.chat_message("assistant").markdown(news_response)
-                st.session_state.conversation.append({"role": "assistant", "content": news_response})
-            elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-                image_response = get_image(prompt)
-                st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-                st.session_state.conversation.append({"role": "assistant", "content": image_response})
-            else:
-                claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-                st.chat_message("assistant").markdown(claude_response)
-                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
-        
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            try:
+                if "latest news" in prompt.lower() or "current events" in prompt.lower():
+                    news_response = get_grok_response(prompt)
+                    st.chat_message("assistant").markdown(news_response)
+                    st.session_state.conversation.append({"role": "assistant", "content": news_response})
+                elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+                    image_response = get_image(prompt)
+                    st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+                    st.session_state.conversation.append({"role": "assistant", "content": image_response})
+                else:
+                    claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+                    st.chat_message("assistant").markdown(claude_response)
+                    st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+            
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
