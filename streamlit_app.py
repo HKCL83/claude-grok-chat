@@ -24,7 +24,6 @@ def get_grok_response(prompt, system_message="You are a real-time news assistant
     }
     
     today = datetime.now().strftime("%Y-%m-%d")
-    
     messages = [
         {
             "role": "system",
@@ -91,59 +90,61 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
 def get_image(prompt):
     return "Image would be generated here if API was available."
 
-# Title
-st.title("AI Assistant")
+# Create main container
+main_container = st.container()
 
-# Initialize conversation history
-if "conversation" not in st.session_state:
-    st.session_state.conversation = []
+with main_container:
+    # Title
+    st.title("AI Assistant")
 
-# Display chat history
-for message in st.session_state.conversation:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Add spacing to push everything to the bottom
-st.markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
-
-# Chat input
-prompt = st.chat_input("What would you like to know?")
-
-# Create columns for file uploader and clear button under the chat input
-col1, col2 = st.columns([4, 1])
-
-with col1:
-    uploaded_files = st.file_uploader(
-        "Drag and drop files here",
-        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-        accept_multiple_files=True,
-        label_visibility="collapsed"
-    )
-
-with col2:
-    clear_chat = st.button("Clear Chat")
-    if clear_chat:
+    # Initialize conversation history
+    if "conversation" not in st.session_state:
         st.session_state.conversation = []
-        st.rerun()
 
-# Handle the prompt after file upload is ready
-if prompt:
-    st.chat_message("user").markdown(prompt)
-    st.session_state.conversation.append({"role": "user", "content": prompt})
+    # Display chat history
+    for message in st.session_state.conversation:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    try:
-        if "latest news" in prompt.lower() or "current events" in prompt.lower():
-            news_response = get_grok_response(prompt)
-            st.chat_message("assistant").markdown(news_response)
-            st.session_state.conversation.append({"role": "assistant", "content": news_response})
-        elif "render image" in prompt.lower() or "generate image" in prompt.lower():
-            image_response = get_image(prompt)
-            st.chat_message("assistant").markdown(f"Image generated: {image_response}")
-            st.session_state.conversation.append({"role": "assistant", "content": image_response})
-        else:
-            claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
-            st.chat_message("assistant").markdown(claude_response)
-            st.session_state.conversation.append({"role": "assistant", "content": claude_response})
-    
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+    # Handle user input
+    prompt = st.chat_input("What would you like to know?")
+
+    # File uploader and Clear Chat in separate container
+    input_container = st.container()
+    with input_container:
+        upload_col, clear_col = st.columns([5,1])
+        
+        with upload_col:
+            uploaded_files = st.file_uploader(
+                "Drag and drop files here",
+                type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+                accept_multiple_files=True,
+                key="file_uploader"
+            )
+            
+        with clear_col:
+            if st.button("Clear Chat", use_container_width=True):
+                st.session_state.conversation = []
+                st.rerun()
+
+    # Handle the prompt
+    if prompt:
+        st.chat_message("user").markdown(prompt)
+        st.session_state.conversation.append({"role": "user", "content": prompt})
+
+        try:
+            if "latest news" in prompt.lower() or "current events" in prompt.lower():
+                news_response = get_grok_response(prompt)
+                st.chat_message("assistant").markdown(news_response)
+                st.session_state.conversation.append({"role": "assistant", "content": news_response})
+            elif "render image" in prompt.lower() or "generate image" in prompt.lower():
+                image_response = get_image(prompt)
+                st.chat_message("assistant").markdown(f"Image generated: {image_response}")
+                st.session_state.conversation.append({"role": "assistant", "content": image_response})
+            else:
+                claude_response = get_claude_response(prompt, files=uploaded_files if 'uploaded_files' in locals() else None)
+                st.chat_message("assistant").markdown(claude_response)
+                st.session_state.conversation.append({"role": "assistant", "content": claude_response})
+        
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
