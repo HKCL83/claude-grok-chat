@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 st.set_page_config(
     page_title="AI Assistant",
     page_icon="🤖",
-    layout="centered"  # Changed to centered layout
+    layout="centered"
 )
 
 # Initialize API keys from secrets
@@ -91,30 +91,6 @@ def get_claude_response(prompt, system_message="You are a versatile AI assistant
 def get_image(prompt):
     return "Image would be generated here if API was available."
 
-# Custom CSS for layout
-st.markdown("""
-    <style>
-    .stApp {
-        max-width: 1000px;
-        margin: 0 auto;
-    }
-    .stChatFloatingInputContainer {
-        margin-bottom: 20px;
-    }
-    .upload-text {
-        font-size: 14px;
-        color: #666;
-    }
-    .css-1vq4p4l {  /* This targets the input container */
-        padding-bottom: 4rem;
-    }
-    .css-1x8cf1d {  /* This targets the file upload area */
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # Title
 st.title("AI Assistant")
 
@@ -127,26 +103,28 @@ for message in st.session_state.conversation:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Handle user input
+# Add spacing to push everything to the bottom
+st.markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
+
+# Chat input
 prompt = st.chat_input("What would you like to know?")
 
-# File uploader and clear chat in a container at the bottom
-with st.container():
-    col1, col2 = st.columns([4, 1])
-    
-    with col1:
-        uploaded_files = st.file_uploader(
-            "Drag and drop files here",
-            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-            accept_multiple_files=True,
-            label_visibility="collapsed"
-        )
-        st.markdown('<p class="upload-text">Limit 200MB per file • PNG, JPG, JPEG, TXT, PDF, DOC, DOCX, CSV</p>', unsafe_allow_html=True)
-    
-    with col2:
-        if st.button("Clear Chat", use_container_width=True):
-            st.session_state.conversation = []
-            st.rerun()
+# Create columns for file uploader and clear button under the chat input
+col1, col2 = st.columns([4, 1])
+
+with col1:
+    uploaded_files = st.file_uploader(
+        "Drag and drop files here",
+        type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+        accept_multiple_files=True,
+        label_visibility="collapsed"
+    )
+
+with col2:
+    clear_chat = st.button("Clear Chat")
+    if clear_chat:
+        st.session_state.conversation = []
+        st.rerun()
 
 # Handle the prompt after file upload is ready
 if prompt:
