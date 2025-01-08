@@ -31,7 +31,79 @@ st.markdown("""
 anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
-[... keep all your existing functions ...]
+def get_grok_response(prompt, system_message="You are a real-time news assistant."):
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    messages = [
+        {
+            "role": "system",
+            "content": f"""You are a real-time news assistant. When reporting news:
+            1. Only report verifiable current news from {today}
+            2. If you cannot verify a story is from today, say so explicitly
+            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
+            4. If you're not sure about the date, acknowledge the uncertainty
+            5. Prioritize factual reporting over completeness
+            
+            Format: 
+            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
+        }
+    ]
+    
+    if "conversation" in st.session_state:
+        messages.extend(st.session_state.conversation[-5:])
+    
+    messages.append({
+        "role": "user",
+        "content": prompt
+    })
+    
+    data = {
+        "model": "grok-beta",
+        "messages": messages,
+        "stream": False,
+        "temperature": 0.2,
+        "max_tokens": 1000
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()['choices'][0]['message']['content']
+
+def get_claude_response(prompt, system_message="You are a versatile AI assistant.", files=None):
+    messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]] if "conversation" in st.session_state else []
+    
+    if files:
+        file_contents = []
+        for file in files:
+            file_content = file.read()
+            if isinstance(file_content, bytes):
+                file_content = file_content.decode('utf-8', errors='ignore')
+            file_contents.append({
+                "filename": file.name,
+                "content": file_content
+            })
+        
+        file_info = "\n".join([f"File: {f['filename']}\nContent:\n{f['content']}" for f in file_contents])
+        prompt = f"Files uploaded:\n{file_info}\n\n{prompt}"
+    
+    messages.append({"role": "user", "content": prompt})
+    
+    response = anthropic.messages.create(
+        model="claude-3-opus-20240229",
+        max_tokens=1024,
+        system=system_message,
+        messages=messages
+    )
+    
+    return response.content[0].text if isinstance(response.content, list) else response.content
+
+def get_image(prompt):
+    return "Image would be generated here if API was available."
 
 # Create main container
 main_container = st.container()
