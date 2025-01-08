@@ -20,14 +20,6 @@ st.markdown("""
         background-color: #4dacbc;
     }
     
-    /* Create a scrollable container for chat messages */
-    .chat-container {
-        height: calc(100vh - 250px);  /* Adjust height to leave space for input */
-        overflow-y: auto;
-        margin-bottom: 10px;
-        padding-right: 10px;
-    }
-    
     /* Style chat message containers */
     .stChatMessage {
         background-color: white;
@@ -35,20 +27,30 @@ st.markdown("""
         padding: 10px;
         margin: 5px 0;
     }
+
+    /* Style the chat input container to be fixed */
+    [data-testid="stChatInput"] {
+        position: fixed;
+        bottom: 110px;
+        left: 0;
+        right: 0;
+        background-color: white;
+        padding: 10px;
+        z-index: 101;
+    }
     
-    /* Fix input area at the bottom */
-    .fixed-bottom {
+    /* Style input container and file uploader */
+    [data-testid="stChatInputContainer"] {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         background-color: #4dacbc;
-        padding: 1rem;
-        z-index: 1000;
+        padding: 20px;
+        z-index: 100;
     }
-    
-    /* Style input container and file uploader */
-    .stChatInputContainer, [data-testid="stFileUploadDropzone"] {
+
+    [data-testid="stFileUploadDropzone"] {
         background-color: white !important;
         border-radius: 10px;
     }
@@ -68,9 +70,16 @@ st.markdown("""
         background-color: white !important;
     }
 
-    /* Add padding at the bottom for fixed input area */
-    .main-content {
+    /* Main chat container that scrolls */
+    [data-testid="stChatMessageContent"] {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
         padding-bottom: 200px;
+    }
+
+    /* Hide the empty space */
+    .st-emotion-cache-zq5wmm.ezrtsby0 {
+        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
