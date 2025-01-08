@@ -17,82 +17,16 @@ anthropic = Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 GROK_API_KEY = st.secrets["GROK_API_KEY"]
 
 def get_grok_response(prompt, system_message="You are a real-time news assistant."):
-    url = "https://api.x.ai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {GROK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    
-    messages = [
-        {
-            "role": "system",
-            "content": f"""You are a real-time news assistant. When reporting news:
-            1. Only report verifiable current news from {today}
-            2. If you cannot verify a story is from today, say so explicitly
-            3. Include the source name (e.g., Reuters, AP, etc.) but not URLs unless you can verify them
-            4. If you're not sure about the date, acknowledge the uncertainty
-            5. Prioritize factual reporting over completeness
-            
-            Format: 
-            [SOURCE NAME] [DATE IF KNOWN] - [HEADLINE] - [SUMMARY]"""
-        }
-    ]
-    
-    if "conversation" in st.session_state:
-        messages.extend(st.session_state.conversation[-5:])
-    
-    messages.append({
-        "role": "user",
-        "content": prompt
-    })
-    
-    data = {
-        "model": "grok-beta",
-        "messages": messages,
-        "stream": False,
-        "temperature": 0.2,
-        "max_tokens": 1000
-    }
-    
-    response = requests.post(url, headers=headers, json=data)
-    response.raise_for_status()
-    return response.json()['choices'][0]['message']['content']
+    # ... (keep existing function implementation)
+    pass
 
 def get_claude_response(prompt, system_message="You are a versatile AI assistant.", files=None):
-    messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.conversation[-5:]] if "conversation" in st.session_state else []
-    
-    # If files are uploaded, include them in the message
-    if files:
-        file_contents = []
-        for file in files:
-            file_content = file.read()
-            if isinstance(file_content, bytes):
-                file_content = file_content.decode('utf-8', errors='ignore')
-            file_contents.append({
-                "filename": file.name,
-                "content": file_content
-            })
-        
-        # Add file information to the prompt
-        file_info = "\n".join([f"File: {f['filename']}\nContent:\n{f['content']}" for f in file_contents])
-        prompt = f"Files uploaded:\n{file_info}\n\n{prompt}"
-    
-    messages.append({"role": "user", "content": prompt})
-    
-    response = anthropic.messages.create(
-        model="claude-3-opus-20240229",
-        max_tokens=1024,
-        system=system_message,
-        messages=messages
-    )
-    
-    return response.content[0].text if isinstance(response.content, list) else response.content
+    # ... (keep existing function implementation)
+    pass
 
 def get_image(prompt):
-    # This function is a placeholder for when you have an actual image generation API from Grok
-    return "Image would be generated here if API was available."
+    # ... (keep existing function implementation)
+    pass
 
 # Title
 st.title("AI Assistant")
@@ -106,10 +40,7 @@ for message in st.session_state.conversation:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Create space to push elements to bottom
-st.empty().markdown("<div style='height: calc(100vh - 300px);'></div>", unsafe_allow_html=True)
-
-# Chat input first
+# Chat input
 if prompt := st.chat_input("What would you like to know?"):
     st.chat_message("user").markdown(prompt)
     st.session_state.conversation.append({"role": "user", "content": prompt})
@@ -131,15 +62,21 @@ if prompt := st.chat_input("What would you like to know?"):
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
-# Add Clear Chat button
-if st.button("Clear Chat", key="clear_button", help="Clear the chat history"):
-    st.session_state.conversation = []
-    st.rerun()
-
-# Add file uploader
-uploaded_files = st.file_uploader(
-    "Files",
-    type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
-    accept_multiple_files=True,
-    key="file_uploader"
-)
+# Create a container for bottom controls
+with st.container():
+    col1, col2 = st.columns([3, 1])
+    
+    # File uploader in the left column
+    with col1:
+        uploaded_files = st.file_uploader(
+            "Upload Files",
+            type=["png", "jpg", "jpeg", "txt", "pdf", "doc", "docx", "csv"],
+            accept_multiple_files=True,
+            key="file_uploader"
+        )
+    
+    # Clear button in the right column
+    with col2:
+        if st.button("Clear Chat", key="clear_button", help="Clear the chat history"):
+            st.session_state.conversation = []
+            st.rerun()
